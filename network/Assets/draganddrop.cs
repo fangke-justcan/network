@@ -24,11 +24,10 @@ public class draganddrop : MonoBehaviour
         // Get the mouse position from Event.
         // Note that the y position from Event is inverted.
         mousePos.x = Input.mousePosition.x;
-        //mousePos.y = Camera.main.pixelHeight - Input.mousePosition.y;
         mousePos.y = Input.mousePosition.y;
-        point = Camera.main.ScreenToWorldPoint(new Vector3(mousePos.x, mousePos.y, 10));
+        point = Camera.main.ScreenToWorldPoint(new Vector3(mousePos.x, mousePos.y, 10)); // 10 is the camera depth
         transform.position = point;
-        Debug.Log("mousedrag");
+        
 
     }
    

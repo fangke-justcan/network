@@ -18,15 +18,17 @@ public class edgeVertex : MonoBehaviour
         GetComponent<LineRenderer>().SetPosition(0, v1.transform.position);
         GetComponent<LineRenderer>().SetPosition(1, v2.transform.position);
 
-        //if (Input.GetKeyDown(KeyCode.A))  pullALittle();
     }
 
-    void pullALittle()
+    public void pullALittle(float direction)
     {
+        // pull  direction = +1 ; push :direction = -1 
         Vector3 newv1, newv2;
-        newv1= Vector3.Lerp(v1.transform.position, v2.transform.position,0.001f);
-        newv2= Vector3.Lerp(v1.transform.position, v2.transform.position, 0.999f);
+        newv1= Vector3.Lerp(v1.transform.position, v2.transform.position,0.001f*direction);
+        newv2= Vector3.Lerp(v1.transform.position, v2.transform.position, 0.999f*direction);
         v1.transform.position = newv1;
         v2.transform.position = newv2;
     }
+
+    
 }
