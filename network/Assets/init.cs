@@ -34,32 +34,54 @@ public class init : MonoBehaviour
     public int sickCnt = 0;
     public int nodeCnt = 50;
     public float Pconnect = 0.05f;
-    public float Psick = 0.2f; 
+    public float PconnectEdge = 0.01f;
+    public float Psick = 0.2f;
+    public enum initMethod { randomNode,randomEdge };
+    public initMethod thisInit;
     // Start is called before the first frame update
     void Start()
     {
-        
         nodes = new GameObject[nodeCnt];
-        edges = new GameObject[nodeCnt*(nodeCnt-1)/2];
-        for (int i = 0;i < nodeCnt; i++)   //instantiate the nodes 
+        edges = new GameObject[nodeCnt * (nodeCnt - 1) / 2];
+        if (thisInit == initMethod.randomNode) init_randomNode();
+        else init_randomEdge();
+
+
+        relocate();
+
+    }
+
+
+    void init_randomEdge()
+    {
+        for (int i = 0; i < nodeCnt; i++)   //instantiate the nodes 
         {
             a.x = Random.Range(-5f, 5f); a.y = Random.Range(-5f, 5f); a.z = 0;
-            nodes[i] = Instantiate(node,a,Quaternion.identity);
+            nodes[i] = Instantiate(node, a, Quaternion.identity);
             nodes[i].GetComponent<node>().index = i;
-            
-        
+
+
 
         }
 
-        
-        for(int i =0; i< nodeCnt; i++)    // add edges - random network - each nodes has a Pconnect probability to connect to every other node
+        /*
+        edges[0] = Instantiate(edge);
+        edges[0].GetComponent<edgeVertex>().v1 = nodes[0];
+        edges[0].GetComponent<edgeVertex>().v2 = nodes[1];
+        nodes[i].GetComponent<node>().neighbours[nodes[i].GetComponent<node>().neighbourCnt] = j;
+        nodes[i].GetComponent<node>().neighbourCnt++;
+        nodes[j].GetComponent<node>().neighbours[nodes[j].GetComponent<node>().neighbourCnt] = i;
+        nodes[j].GetComponent<node>().neighbourCnt++;
+        edgeCnt++;
+        */
+        for (int i = 0; i < nodeCnt; i++)    // add edges - random network - each nodes has a Pconnect probability to connect to every other node
         {
-            for (int j = i+1;j< nodeCnt; j++)
+            for (int j = i + 1; j < nodeCnt; j++)
             {
-                if (Random.Range(0f,1f)< Pconnect)
+                if (Random.Range(0f, 1f) < Pconnect* ((nodes[i].GetComponent<node>().neighbourCnt+1)))
                 {
                     edges[edgeCnt] = Instantiate(edge);
-                    edges[edgeCnt].GetComponent<edgeVertex>().v1 =  nodes[i];
+                    edges[edgeCnt].GetComponent<edgeVertex>().v1 = nodes[i];
                     edges[edgeCnt].GetComponent<edgeVertex>().v2 = nodes[j];
                     nodes[i].GetComponent<node>().neighbours[nodes[i].GetComponent<node>().neighbourCnt] = j;
                     nodes[i].GetComponent<node>().neighbourCnt++;
@@ -70,10 +92,43 @@ public class init : MonoBehaviour
                 }
             }
         }
-        relocate();
 
+
+    }
+
+
+    void init_randomNode()
+    {
         
-        
+        for (int i = 0; i < nodeCnt; i++)   //instantiate the nodes 
+        {
+            a.x = Random.Range(-5f, 5f); a.y = Random.Range(-5f, 5f); a.z = 0;
+            nodes[i] = Instantiate(node, a, Quaternion.identity);
+            nodes[i].GetComponent<node>().index = i;
+
+
+
+        }
+
+
+        for (int i = 0; i < nodeCnt; i++)    // add edges - random network - each nodes has a Pconnect probability to connect to every other node
+        {
+            for (int j = i + 1; j < nodeCnt; j++)
+            {
+                if (Random.Range(0f, 1f) < Pconnect)
+                {
+                    edges[edgeCnt] = Instantiate(edge);
+                    edges[edgeCnt].GetComponent<edgeVertex>().v1 = nodes[i];
+                    edges[edgeCnt].GetComponent<edgeVertex>().v2 = nodes[j];
+                    nodes[i].GetComponent<node>().neighbours[nodes[i].GetComponent<node>().neighbourCnt] = j;
+                    nodes[i].GetComponent<node>().neighbourCnt++;
+                    nodes[j].GetComponent<node>().neighbours[nodes[j].GetComponent<node>().neighbourCnt] = i;
+                    nodes[j].GetComponent<node>().neighbourCnt++;
+                    edgeCnt++;
+
+                }
+            }
+        }
     }
 
     public void nextDay()     // next day , events and infections 
@@ -99,13 +154,20 @@ public class init : MonoBehaviour
                             {
                                 nextSick[nextSickcnt] = nodes[i].GetComponent<node>().neighbours[j];
                                 nextSickcnt++;
-                                sickCnt++;
+                               
                             } 
                         }
                     }
                 }
             }
-            for (int i =0; i<nextSickcnt; i++) nodes[nextSick[i]].GetComponent<node>().currentStatus = global::node.nodeStatus.Sick;    // update the sick nodes for next day 
+            for (int i = 0; i < nextSickcnt; i++)
+            {
+                if (nodes[nextSick[i]].GetComponent<node>().currentStatus != global::node.nodeStatus.Sick)
+                {
+                    nodes[nextSick[i]].GetComponent<node>().currentStatus = global::node.nodeStatus.Sick;
+                    sickCnt++;
+                }
+            } // update the sick nodes for next day 
         }
     }
 
@@ -194,6 +256,8 @@ public class init : MonoBehaviour
             }
 
         }
+
+        /*
         for (int i = 0; i < nodeCnt; i++)
         {
 
@@ -211,6 +275,8 @@ public class init : MonoBehaviour
             }
 
         }
+        */
+
         for (int i = 0; i < nodeCnt; i++)
         {
 
