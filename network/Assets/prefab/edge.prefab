@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 1646532698980984360}
   - component: {fileID: 1616395778235169446}
   - component: {fileID: 5988853396343810969}
+  - component: {fileID: 4931825291077454900}
   m_Layer: 0
   m_Name: edge
   m_TagString: Untagged
@@ -144,3 +145,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   v1: {fileID: 0}
   v2: {fileID: 0}
+--- !u!65 &4931825291077454900
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 212153481617285342}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 1
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Size: {x: 3.0500913, y: 6.2387958, z: 0.1}
+  m_Center: {x: 3.04394, y: -0.10994625, z: 0}

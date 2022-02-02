@@ -9,8 +9,9 @@ public class node : MonoBehaviour
     public int neighbourCnt=0;
     public int[] neighbours;
     public TextMesh indexName;
-    public enum nodeStatus { Normal, Sick};
+    public enum nodeStatus { Normal, Sick , Isolation};
     public nodeStatus currentStatus = nodeStatus.Normal;
+    public nodeStatus lastStatus = nodeStatus.Normal;
     // Start is called before the first frame update
     void Awake()
     {
@@ -24,6 +25,7 @@ public class node : MonoBehaviour
         indexName.text = "" + index;
         if (currentStatus == nodeStatus.Sick) GetComponent<SpriteRenderer>().color = Color.blue;
         if (currentStatus == nodeStatus.Normal) GetComponent<SpriteRenderer>().color = Color.red;
+        if (currentStatus == nodeStatus.Isolation) GetComponent<SpriteRenderer>().color = Color.black;
 
     }
 }

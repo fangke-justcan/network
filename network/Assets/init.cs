@@ -38,6 +38,15 @@ public class init : MonoBehaviour
     public float Psick = 0.2f;
     public enum initMethod { randomNode,randomEdge };
     public initMethod thisInit;
+
+    public Texture2D cursorTexture;
+    public CursorMode cursorMode = CursorMode.Auto;
+    public Vector2 hotSpot = Vector2.zero;
+    public enum cursorState { normal, isolation};
+    public cursorState currentCursor = cursorState.normal;
+
+    public int daycnt = 0;
+    public float sickPercentage; 
     // Start is called before the first frame update
     void Start()
     {
@@ -131,8 +140,11 @@ public class init : MonoBehaviour
         }
     }
 
+    
+
     public void nextDay()     // next day , events and infections 
     {
+        daycnt++;
         if (sickCnt == 0)   // the first day 
         {
             nodes[Random.Range(0, nodeCnt-1)].GetComponent<node>().currentStatus = global::node.nodeStatus.Sick;
@@ -164,8 +176,11 @@ public class init : MonoBehaviour
             {
                 if (nodes[nextSick[i]].GetComponent<node>().currentStatus != global::node.nodeStatus.Sick)
                 {
-                    nodes[nextSick[i]].GetComponent<node>().currentStatus = global::node.nodeStatus.Sick;
-                    sickCnt++;
+                    if (nodes[nextSick[i]].GetComponent<node>().currentStatus != global::node.nodeStatus.Isolation)
+                    {
+                        nodes[nextSick[i]].GetComponent<node>().currentStatus = global::node.nodeStatus.Sick;
+                        sickCnt++;
+                    }
                 }
             } // update the sick nodes for next day 
         }
@@ -203,7 +218,7 @@ public class init : MonoBehaviour
             {
 
                 float thelta = Random.Range(0f, 2 * Mathf.PI);
-                float r = Random.Range(5f, 5f);
+                float r = Random.Range(3.5f, 3.5f);
                 a.x = r * Mathf.Cos(thelta);
                 a.y = r * Mathf.Sin(thelta);
                 a.z = 0;
@@ -323,11 +338,24 @@ public class init : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        sickPercentage = 1f * sickCnt / nodeCnt;
+        if (Input.GetKey(KeyCode.C) )
+        {
+            Cursor.SetCursor(cursorTexture, hotSpot, cursorMode);
+            currentCursor = cursorState.isolation;
+
+        }
+        else
+        {
+            Cursor.SetCursor(null, Vector2.zero, cursorMode);
+            currentCursor = cursorState.normal;
+        }
 
     }
 
     public void clearSick()
     {
+        daycnt = 0 ; 
         for (int i = 0; i<nodeCnt; i++)
         {
             nodes[i].GetComponent<node>().currentStatus = global::node.nodeStatus.Normal;
