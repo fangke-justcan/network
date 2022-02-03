@@ -9,7 +9,9 @@ public class node : MonoBehaviour
     public int neighbourCnt=0;
     public int[] neighbours;
     public TextMesh indexName;
-    public enum nodeStatus { Normal, Sick , Isolation};
+    public enum nodeStatus { Normal, Sick , Quaratine};
+    public bool sickDetcted = false;
+    public bool normalDected = false; 
     public nodeStatus currentStatus = nodeStatus.Normal;
     public nodeStatus lastStatus = nodeStatus.Normal;
     // Start is called before the first frame update
@@ -23,9 +25,11 @@ public class node : MonoBehaviour
     void Update()
     {
         indexName.text = "" + index;
-        if (currentStatus == nodeStatus.Sick) GetComponent<SpriteRenderer>().color = Color.blue;
-        if (currentStatus == nodeStatus.Normal) GetComponent<SpriteRenderer>().color = Color.red;
-        if (currentStatus == nodeStatus.Isolation) GetComponent<SpriteRenderer>().color = Color.black;
+        if (currentStatus == nodeStatus.Sick && sickDetcted) GetComponent<SpriteRenderer>().color = Color.red;
+        if (currentStatus == nodeStatus.Sick && !sickDetcted) GetComponent<SpriteRenderer>().color = Color.blue;
+        if (currentStatus == nodeStatus.Normal && !normalDected) GetComponent<SpriteRenderer>().color = Color.blue;
+        if (currentStatus == nodeStatus.Normal && normalDected) GetComponent<SpriteRenderer>().color = Color.green;
+        if (currentStatus == nodeStatus.Quaratine) GetComponent<SpriteRenderer>().color = Color.black;
 
     }
 }

@@ -7,11 +7,17 @@ public class infoPanel : MonoBehaviour
 {
     public Text daycnt;
     public Text sickpercentage;
+    public Text quarantinecnt;
+    public Text testcnt;
 
     // Update is called once per frame
     void Update()
     {
         daycnt.text = "Day: " + init.Instance.daycnt;
-        sickpercentage.text = "SickPercentage: " + init.Instance.sickPercentage*100 + "%";
+        sickpercentage.text = "Sick:" + init.Instance.sickCnt+ "people out of total "+ init.Instance.nodeCnt+ " people, sick percentage:" + init.Instance.sickPercentage*100 +"%";
+        quarantinecnt.text = "Quarantine Left: " + init.Instance.quarantineCnt;
+        testcnt.text = "Test Left: " + init.Instance.testCnt;
+
+
     }
 }

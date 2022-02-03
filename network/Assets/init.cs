@@ -39,19 +39,25 @@ public class init : MonoBehaviour
     public enum initMethod { randomNode,randomEdge };
     public initMethod thisInit;
 
-    public Texture2D cursorTexture;
+    public Texture2D cursorTextureQuarantine;
+
+    public Texture2D cursorTextureTest;
     public CursorMode cursorMode = CursorMode.Auto;
     public Vector2 hotSpot = Vector2.zero;
-    public enum cursorState { normal, isolation};
+    public enum cursorState { normal, quarantine, test};
     public cursorState currentCursor = cursorState.normal;
+    public int quarantineCnt = 0;
+    public int testCnt = 0;
 
     public int daycnt = 0;
-    public float sickPercentage; 
+    public float sickPercentage;
+    public int[,] sickOrder;
     // Start is called before the first frame update
     void Start()
     {
         nodes = new GameObject[nodeCnt];
         edges = new GameObject[nodeCnt * (nodeCnt - 1) / 2];
+        sickOrder = new int[nodeCnt,2];   // [i,0] = sickPersonIndex  [i,1] = dayOfSick 
         if (thisInit == initMethod.randomNode) init_randomNode();
         else init_randomEdge();
 
@@ -147,7 +153,9 @@ public class init : MonoBehaviour
         daycnt++;
         if (sickCnt == 0)   // the first day 
         {
-            nodes[Random.Range(0, nodeCnt-1)].GetComponent<node>().currentStatus = global::node.nodeStatus.Sick;
+            int sickIndex = Random.Range(0, nodeCnt - 1);
+            nodes[sickIndex].GetComponent<node>().currentStatus = global::node.nodeStatus.Sick;
+            sickOrder[sickCnt, 0] = sickIndex; sickOrder[sickCnt, 1] = daycnt;
             sickCnt++;
         }
         else
@@ -156,7 +164,7 @@ public class init : MonoBehaviour
             int nextSickcnt = 0;
             for (int i =0; i< nodeCnt; i++)      // each sick node has a Psick probability to infect its neighbour. 
             {
-                if (nodes[i].GetComponent<node>().currentStatus == global::node.nodeStatus.Sick)
+                if (nodes[i].GetComponent<node>().currentStatus == global::node.nodeStatus.Sick )
                 {
                     for (int j = 0; j< nodes[i].GetComponent<node>().neighbourCnt; j++)
                     {
@@ -176,14 +184,34 @@ public class init : MonoBehaviour
             {
                 if (nodes[nextSick[i]].GetComponent<node>().currentStatus != global::node.nodeStatus.Sick)
                 {
-                    if (nodes[nextSick[i]].GetComponent<node>().currentStatus != global::node.nodeStatus.Isolation)
+                    if (nodes[nextSick[i]].GetComponent<node>().currentStatus != global::node.nodeStatus.Quaratine)
                     {
                         nodes[nextSick[i]].GetComponent<node>().currentStatus = global::node.nodeStatus.Sick;
+                        sickOrder[sickCnt, 0] = nextSick[i]; sickOrder[sickCnt, 1] = daycnt;
                         sickCnt++;
                     }
                 }
             } // update the sick nodes for next day 
+
+
+            for (int i = 0; i < nodeCnt; i++)   //reset Quanratine and normaldected 
+            {
+                if (nodes[i].GetComponent<node>().currentStatus == global::node.nodeStatus.Quaratine)
+                { global::node.nodeStatus a = nodes[i].GetComponent<node>().lastStatus;
+                    nodes[i].GetComponent<node>().currentStatus = nodes[i].GetComponent<node>().lastStatus; }
+                nodes[i].GetComponent<node>().normalDected = false;
+            }
+            sickPercentage = 1f * sickCnt / nodeCnt;
+            if (sickPercentage >= 0.1) { quarantineCnt = 1; testCnt = 4; }
+            if (sickPercentage >= 0.2) { quarantineCnt = 2; testCnt = 4; }
+            if (sickPercentage >= 0.5) { quarantineCnt = 2; testCnt = 6; }
+            if (sickPercentage >= 0.75) { quarantineCnt = 3; testCnt = 6; }
+
+            
+            
+
         }
+        Debug.Log("Now, it is Day:" + daycnt);
     }
 
     public void relocate()   // random new location, network does not change. 
@@ -208,7 +236,7 @@ public class init : MonoBehaviour
             {
 
                 float thelta = Random.Range(0f, 2 * Mathf.PI);
-                float r = Random.Range(3f, 3f);
+                float r = Random.Range(1.5f, 1.5f);
                 a.x = r * Mathf.Cos(thelta);
                 a.y = r * Mathf.Sin(thelta);
                 a.z = 0;
@@ -218,7 +246,7 @@ public class init : MonoBehaviour
             {
 
                 float thelta = Random.Range(0f, 2 * Mathf.PI);
-                float r = Random.Range(3.5f, 3.5f);
+                float r = Random.Range(2f, 2f);
                 a.x = r * Mathf.Cos(thelta);
                 a.y = r * Mathf.Sin(thelta);
                 a.z = 0;
@@ -341,9 +369,14 @@ public class init : MonoBehaviour
         sickPercentage = 1f * sickCnt / nodeCnt;
         if (Input.GetKey(KeyCode.C) )
         {
-            Cursor.SetCursor(cursorTexture, hotSpot, cursorMode);
-            currentCursor = cursorState.isolation;
+            Cursor.SetCursor(cursorTextureQuarantine, hotSpot, cursorMode);
+            currentCursor = cursorState.quarantine;
 
+        }
+        else if (Input.GetKey(KeyCode.T))
+        {
+            Cursor.SetCursor(cursorTextureTest, hotSpot, cursorMode);
+            currentCursor = cursorState.test;
         }
         else
         {
@@ -351,15 +384,30 @@ public class init : MonoBehaviour
             currentCursor = cursorState.normal;
         }
 
+        
+
+
+
     }
 
     public void clearSick()
     {
-        daycnt = 0 ; 
+        daycnt = 0 ;
+        quarantineCnt = 0;
+        testCnt = 0;
         for (int i = 0; i<nodeCnt; i++)
         {
             nodes[i].GetComponent<node>().currentStatus = global::node.nodeStatus.Normal;
+            nodes[i].GetComponent<node>().sickDetcted = false;
+            nodes[i].GetComponent<node>().normalDected = false;
+
         }
         sickCnt = 0;
     }
+    public void outputSickOrder()
+    {
+        for (int i = 0; i < sickCnt; i++)
+            Debug.Log(sickOrder[i, 0] + " get sick at " + sickOrder[i, 1]);
+    }
 }
+
