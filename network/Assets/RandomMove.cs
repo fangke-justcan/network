@@ -5,7 +5,7 @@ using UnityEngine;
 public class RandomMove : MonoBehaviour
 {
     public enum moveStatus { random, circle};
-    moveStatus currentMoveStatus = moveStatus.random , lastMoveStatus = moveStatus.random;
+    public moveStatus currentMoveStatus = moveStatus.random , lastMoveStatus = moveStatus.random;
   
     
     public int startCircleCD = 0;

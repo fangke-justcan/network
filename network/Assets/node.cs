@@ -15,6 +15,10 @@ public class node : MonoBehaviour
     public nodeStatus currentStatus = nodeStatus.Normal;
     public nodeStatus lastStatus = nodeStatus.Normal;
     // Start is called before the first frame update
+
+
+ 
+
     void Awake()
     {
         neighbours = new int[init.Instance.nodeCnt];

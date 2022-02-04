@@ -14,6 +14,7 @@ public class init : MonoBehaviour
             {
                 GameObject instance = new GameObject("init");
                 instance.AddComponent<init>();
+                
             }
 
             return _instance;
@@ -25,46 +26,61 @@ public class init : MonoBehaviour
         _instance = this;
     }
 
-    public GameObject node;
-    public GameObject edge;
-    public GameObject[] nodes;
-    public GameObject[] edges;
-    Vector3 a;
-    public int edgeCnt = 0;
-    public int sickCnt = 0;
+    public int totaldays = 20;
     public int nodeCnt = 50;
     public float Pconnect = 0.05f;
     public float PconnectEdge = 0.01f;
     public float Psick = 0.2f;
-    public enum initMethod { randomNode,randomEdge };
     public initMethod thisInit;
-
     public Texture2D cursorTextureQuarantine;
-
     public Texture2D cursorTextureTest;
     public CursorMode cursorMode = CursorMode.Auto;
     public Vector2 hotSpot = Vector2.zero;
-    public enum cursorState { normal, quarantine, test};
-    public cursorState currentCursor = cursorState.normal;
-    public int quarantineCnt = 0;
-    public int testCnt = 0;
+    public GameObject nextdayButton;
+    //public simulation sim;
 
-    public int daycnt = 0;
+    [HideInInspector]
+    public GameObject node,edge;
+    [HideInInspector]
+    public GameObject[] nodes,edges;
+    public enum initMethod { randomNode, randomEdge };
+    public enum showMode { today , past};
+    [HideInInspector]
+    public showMode currentShowMode = showMode.today; 
+    public enum cursorState { normal, quarantine, test };
+    [HideInInspector]
+    public cursorState currentCursor = cursorState.normal;
+    [HideInInspector]
+    public int quarantineCnt = 0, testCnt = 0, daycnt = 0, showdaycnt = 0, edgeCnt = 0, sickCnt = 0;
+    [HideInInspector]
     public float sickPercentage;
-    public int[,] sickOrder;
+    [HideInInspector]
+    public int[,] sickOrder; 
+    protected bool[,] sickDetectedHistory;
+    protected bool[,] normalDetectedHistory;
+    protected node.nodeStatus[,] currentStatusHistory;
+    protected int[] sickCntHistory;
+    protected Vector3 a;
+    
+
     // Start is called before the first frame update
     void Start()
     {
         nodes = new GameObject[nodeCnt];
         edges = new GameObject[nodeCnt * (nodeCnt - 1) / 2];
-        sickOrder = new int[nodeCnt,2];   // [i,0] = sickPersonIndex  [i,1] = dayOfSick 
+        sickOrder = new int[nodeCnt, 2];   // [i,0] = sickPersonIndex  [i,1] = dayOfSick 
+        sickDetectedHistory = new bool[nodeCnt, totaldays];
+        normalDetectedHistory = new bool[nodeCnt, totaldays];
+        currentStatusHistory = new node.nodeStatus[nodeCnt, totaldays];
+        sickCntHistory = new int[totaldays];
         if (thisInit == initMethod.randomNode) init_randomNode();
         else init_randomEdge();
 
 
         relocate();
-
     }
+
+ 
 
 
     void init_randomEdge()
@@ -93,7 +109,7 @@ public class init : MonoBehaviour
         {
             for (int j = i + 1; j < nodeCnt; j++)
             {
-                if (Random.Range(0f, 1f) < Pconnect* ((nodes[i].GetComponent<node>().neighbourCnt+1)))
+                if (Random.Range(0f, 1f) < Pconnect * ((nodes[i].GetComponent<node>().neighbourCnt + 1)))
                 {
                     edges[edgeCnt] = Instantiate(edge);
                     edges[edgeCnt].GetComponent<edgeVertex>().v1 = nodes[i];
@@ -114,7 +130,7 @@ public class init : MonoBehaviour
 
     void init_randomNode()
     {
-        
+
         for (int i = 0; i < nodeCnt; i++)   //instantiate the nodes 
         {
             a.x = Random.Range(-5f, 5f); a.y = Random.Range(-5f, 5f); a.z = 0;
@@ -146,36 +162,39 @@ public class init : MonoBehaviour
         }
     }
 
-    
+
 
     public void nextDay()     // next day , events and infections 
     {
-        daycnt++;
+        save(daycnt);
+        daycnt++; showdaycnt = daycnt;
         if (sickCnt == 0)   // the first day 
         {
             int sickIndex = Random.Range(0, nodeCnt - 1);
             nodes[sickIndex].GetComponent<node>().currentStatus = global::node.nodeStatus.Sick;
             sickOrder[sickCnt, 0] = sickIndex; sickOrder[sickCnt, 1] = daycnt;
             sickCnt++;
+            
+           
         }
         else
         {
             int[] nextSick = new int[nodeCnt];
             int nextSickcnt = 0;
-            for (int i =0; i< nodeCnt; i++)      // each sick node has a Psick probability to infect its neighbour. 
+            for (int i = 0; i < nodeCnt; i++)      // each sick node has a Psick probability to infect its neighbour. 
             {
-                if (nodes[i].GetComponent<node>().currentStatus == global::node.nodeStatus.Sick )
+                if (nodes[i].GetComponent<node>().currentStatus == global::node.nodeStatus.Sick)
                 {
-                    for (int j = 0; j< nodes[i].GetComponent<node>().neighbourCnt; j++)
+                    for (int j = 0; j < nodes[i].GetComponent<node>().neighbourCnt; j++)
                     {
-                        if (Random.Range(0f, 1f) < Psick) 
+                        if (Random.Range(0f, 1f) < Psick)
                         {
                             if (nodes[nodes[i].GetComponent<node>().neighbours[j]].GetComponent<node>().currentStatus != global::node.nodeStatus.Sick)
                             {
                                 nextSick[nextSickcnt] = nodes[i].GetComponent<node>().neighbours[j];
                                 nextSickcnt++;
-                               
-                            } 
+
+                            }
                         }
                     }
                 }
@@ -207,11 +226,13 @@ public class init : MonoBehaviour
             if (sickPercentage >= 0.5) { quarantineCnt = 2; testCnt = 6; }
             if (sickPercentage >= 0.75) { quarantineCnt = 3; testCnt = 6; }
 
-            
-            
+
+
 
         }
         Debug.Log("Now, it is Day:" + daycnt);
+
+        
     }
 
     public void relocate()   // random new location, network does not change. 
@@ -220,11 +241,11 @@ public class init : MonoBehaviour
         Vector3 a;
         for (int i = 0; i < nodeCnt; i++)
         {
-            
-            
+
+
             int nc = nodes[i].GetComponent<node>().neighbourCnt;
 
-            if (nc >  1.5 *Eedgecnt)      // node with more neighbous at the center 
+            if (nc > 1.5 * Eedgecnt)      // node with more neighbous at the center 
             {
                 float thelta = Random.Range(0f, 2 * Mathf.PI);
                 float r = Random.Range(1f, 1f);
@@ -232,7 +253,7 @@ public class init : MonoBehaviour
                 a.y = r * Mathf.Sin(thelta);
                 a.z = 0;
             }
-            else if (nc > 0.8f*Eedgecnt)      // node with medium neighbous  
+            else if (nc > 0.8f * Eedgecnt)      // node with medium neighbous  
             {
 
                 float thelta = Random.Range(0f, 2 * Mathf.PI);
@@ -250,7 +271,7 @@ public class init : MonoBehaviour
                 a.x = r * Mathf.Cos(thelta);
                 a.y = r * Mathf.Sin(thelta);
                 a.z = 0;
-              
+
             }
             nodes[i].transform.position = a;
 
@@ -263,24 +284,24 @@ public class init : MonoBehaviour
 
     public void reshape()    // node position at the center of their neighbours 
     {
-        float Eedgecnt = Pconnect * nodeCnt; 
-        
+        float Eedgecnt = Pconnect * nodeCnt;
+
         for (int i = 0; i < nodeCnt; i++)
         {
 
             int nc = nodes[i].GetComponent<node>().neighbourCnt;
 
-            if (nc > 0.8 * Eedgecnt && nc <= 1.5 * Eedgecnt && nc>1)
+            if (nc > 0.8 * Eedgecnt && nc <= 1.5 * Eedgecnt && nc > 1)
             {
-               Vector3 center = Vector3.zero;
-               for (int j =0; j< nc; j++)
+                Vector3 center = Vector3.zero;
+                for (int j = 0; j < nc; j++)
                 {
                     center += nodes[nodes[i].GetComponent<node>().neighbours[j]].transform.position;
                 }
-               center /= nc;
-               nodes[i].transform.position = center;
+                center /= nc;
+                nodes[i].transform.position = center;
             }
-            
+
         }
         for (int i = 0; i < nodeCnt; i++)
         {
@@ -333,7 +354,7 @@ public class init : MonoBehaviour
                 a.x = r * Mathf.Cos(thelta);
                 a.y = r * Mathf.Sin(thelta);
                 a.z = 0;
-                nodes[i].transform.position = a+ nodes[nodes[i].GetComponent<node>().neighbours[0]].transform.position;
+                nodes[i].transform.position = a + nodes[nodes[i].GetComponent<node>().neighbours[0]].transform.position;
             }
 
         }
@@ -367,7 +388,7 @@ public class init : MonoBehaviour
     void Update()
     {
         sickPercentage = 1f * sickCnt / nodeCnt;
-        if (Input.GetKey(KeyCode.C) )
+        if (Input.GetKey(KeyCode.C))
         {
             Cursor.SetCursor(cursorTextureQuarantine, hotSpot, cursorMode);
             currentCursor = cursorState.quarantine;
@@ -384,7 +405,7 @@ public class init : MonoBehaviour
             currentCursor = cursorState.normal;
         }
 
-        
+
 
 
 
@@ -392,10 +413,10 @@ public class init : MonoBehaviour
 
     public void clearSick()
     {
-        daycnt = 0 ;
+        daycnt = 0;
         quarantineCnt = 0;
         testCnt = 0;
-        for (int i = 0; i<nodeCnt; i++)
+        for (int i = 0; i < nodeCnt; i++)
         {
             nodes[i].GetComponent<node>().currentStatus = global::node.nodeStatus.Normal;
             nodes[i].GetComponent<node>().sickDetcted = false;
@@ -409,5 +430,62 @@ public class init : MonoBehaviour
         for (int i = 0; i < sickCnt; i++)
             Debug.Log(sickOrder[i, 0] + " get sick at " + sickOrder[i, 1]);
     }
+
+    public void lookBack()
+    {
+        if (currentShowMode == showMode.today )
+        {  
+            save(daycnt);
+            nextdayButton.SetActive(false);
+            Camera.main.backgroundColor = new Color(0.3f,0.3f,0.3f);
+            currentShowMode = showMode.past;
+        }
+
+        showdaycnt--;
+        if (showdaycnt < 0) showdaycnt = 0;
+        load(showdaycnt);
+    }
+
+    public void lookforward()
+    {
+        
+        showdaycnt++;
+        if (showdaycnt >= daycnt) 
+        { 
+            showdaycnt = daycnt; 
+            nextdayButton.SetActive(true);
+            Camera.main.backgroundColor = Color.grey;
+            currentShowMode = showMode.today;
+        }
+        load(showdaycnt);
+    }
+
+
+    void save( int day)
+    {
+        for (int i =0; i< nodeCnt; i++)
+        {
+            sickDetectedHistory[i,day] = nodes[i].GetComponent<node>().sickDetcted;
+
+            normalDetectedHistory[i,day] = nodes[i].GetComponent<node>().normalDected;
+            currentStatusHistory[i,day] = nodes[i].GetComponent<node>().currentStatus;
+            
+        }
+        sickCntHistory[day] = sickCnt;
+    }
+
+    void load(int day)
+    {
+        for (int i = 0; i < nodeCnt; i++)
+        {
+            nodes[i].GetComponent<node>().sickDetcted = sickDetectedHistory[i, day];
+
+            nodes[i].GetComponent<node>().normalDected = normalDetectedHistory[i, day] ;
+            nodes[i].GetComponent<node>().currentStatus = currentStatusHistory[i, day];
+
+        }
+        sickCnt = sickCntHistory[day];
+    }
+
 }
 
