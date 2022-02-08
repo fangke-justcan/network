@@ -14,6 +14,7 @@ public class cursorOperation : MonoBehaviour
     }
     private void OnMouseDown()
     {
+        if (init.Instance.currentGameStarus != init.gameStatus.play) return;
         if (init.Instance.currentShowMode == init.showMode.past) return;
         if (init.Instance.currentCursor == init.cursorState.quarantine )   
         {

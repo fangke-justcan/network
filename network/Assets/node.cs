@@ -19,15 +19,16 @@ public class node : MonoBehaviour
 
  
 
-    void Awake()
+    void Start()
     {
-        neighbours = new int[init.Instance.nodeCnt];
-        neighbourCnt = 0;
+       
+      
 }
 
     // Update is called once per frame
     void Update()
     {
+        if (init.Instance.currentGameStarus != init.gameStatus.play) return;
         indexName.text = "" + index;
         if (currentStatus == nodeStatus.Sick && sickDetcted) GetComponent<SpriteRenderer>().color = Color.red;
         if (currentStatus == nodeStatus.Sick && !sickDetcted) GetComponent<SpriteRenderer>().color = Color.blue;

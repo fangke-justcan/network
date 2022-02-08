@@ -16,7 +16,8 @@ public class draganddrop : MonoBehaviour
 
     private void OnMouseDrag()
     {
-        
+      
+
         Vector3 point = new Vector3();
       //  Event currentEvent = Event.current;
         Vector2 mousePos = new Vector2();
