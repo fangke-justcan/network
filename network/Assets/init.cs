@@ -213,12 +213,28 @@ public class init : MonoBehaviour
         daycnt++; showdaycnt = daycnt;
         if (sickCnt == 0)   // the first day 
         {
-            int sickIndex = Random.Range(0, nodeCnt - 1);
-            nodes[sickIndex].GetComponent<node>().currentStatus = global::node.nodeStatus.Sick;
-            sickOrder[sickCnt, 0] = sickIndex; sickOrder[sickCnt, 1] = daycnt;
-            sickCnt++;
-            
-           
+
+            int failedFirstSick = 0;
+            while (failedFirstSick >=0)
+            {
+                int sickIndex = Random.Range(0, nodeCnt - 1);
+                nodes[sickIndex].GetComponent<node>().currentStatus = global::node.nodeStatus.Sick;
+                sickOrder[sickCnt, 0] = sickIndex; sickOrder[sickCnt, 1] = daycnt;
+                sickCnt++;
+
+                sim.startSimulation();
+                if (sim.averageSimResults[10]/nodeCnt > 0.6 && sim.averageSimResults[10]/nodeCnt < 0.75) failedFirstSick = -100;
+                else { clearSick(); Debug.Log( "try"+ failedFirstSick +"end: " + sim.averageSimResults[10] / nodeCnt); failedFirstSick++; }
+                if (failedFirstSick >= 10) 
+                { 
+                    Debug.Log("Failed first Sick, pls change the config"); 
+                    
+                    break; 
+                }
+
+            }
+
+
         }
         else
         {
