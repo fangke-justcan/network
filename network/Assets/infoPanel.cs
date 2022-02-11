@@ -9,10 +9,13 @@ public class infoPanel : MonoBehaviour
     public Text sickpercentage;
     public Text quarantinecnt;
     public Text testcnt;
+    public Text sickOrder;
+    public Toggle SickOrderToggle;
 
     // Update is called once per frame
     void Update()
     {
+        if (init.Instance.currentGameStarus != init.gameStatus.play) return;
         int circlingCnt = 0;
         for (int i  = 0; i< init.Instance.nodeCnt;i++)
         {
@@ -24,5 +27,16 @@ public class infoPanel : MonoBehaviour
         testcnt.text = "Test Left: " + init.Instance.testCnt + "\n circling node:" + circlingCnt;
 
 
+    }
+    public void outputSickOrder()
+    {
+        sickOrder.text = "";
+        if (SickOrderToggle.isOn)
+        {
+           
+            for (int i = 0; i < init.Instance.sickCnt; i++)
+                sickOrder.text += ("" + init.Instance.sickOrder[i, 0] + " get sick at " + init.Instance.sickOrder[i, 1] + "\n");
+        }
+     
     }
 }

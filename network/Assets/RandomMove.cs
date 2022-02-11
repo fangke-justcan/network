@@ -34,6 +34,7 @@ public class RandomMove : MonoBehaviour
     // Update is called once per frame
     void FixedUpdate()
     {
+        if (init.Instance.currentGameStarus != init.gameStatus.play) return;
         if (currentMoveStatus == moveStatus.random)
         {
             if (lastMoveStatus == moveStatus.circle)

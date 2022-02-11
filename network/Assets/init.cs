@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class init : MonoBehaviour
 {
@@ -24,6 +25,7 @@ public class init : MonoBehaviour
     void Awake()
     {
         _instance = this;
+        currentGameStarus = gameStatus.init;
     }
 
     public int totaldays = 20;
@@ -37,14 +39,15 @@ public class init : MonoBehaviour
     public CursorMode cursorMode = CursorMode.Auto;
     public Vector2 hotSpot = Vector2.zero;
     public GameObject nextdayButton;
-    //public simulation sim;
+    public simulation sim;
 
-    [HideInInspector]
+    
     public GameObject node,edge;
     [HideInInspector]
     public GameObject[] nodes,edges;
     public enum initMethod { randomNode, randomEdge };
     public enum showMode { today , past};
+    public enum gameStatus { init, play};
     [HideInInspector]
     public showMode currentShowMode = showMode.today; 
     public enum cursorState { normal, quarantine, test };
@@ -55,14 +58,16 @@ public class init : MonoBehaviour
     [HideInInspector]
     public float sickPercentage;
     [HideInInspector]
-    public int[,] sickOrder; 
+    public int[,] sickOrder;
+    [HideInInspector]
+    public gameStatus currentGameStarus; 
     protected bool[,] sickDetectedHistory;
     protected bool[,] normalDetectedHistory;
     protected node.nodeStatus[,] currentStatusHistory;
     protected int[] sickCntHistory;
     protected Vector3 a;
-    
 
+  
     // Start is called before the first frame update
     void Start()
     {
@@ -72,16 +77,26 @@ public class init : MonoBehaviour
         sickDetectedHistory = new bool[nodeCnt, totaldays];
         normalDetectedHistory = new bool[nodeCnt, totaldays];
         currentStatusHistory = new node.nodeStatus[nodeCnt, totaldays];
-        sickCntHistory = new int[totaldays];
+        sickCntHistory = new int[totaldays]; 
+        
         if (thisInit == initMethod.randomNode) init_randomNode();
         else init_randomEdge();
 
+        sim.startSimulation();
+        
 
-        relocate();
+
+
+        
     }
 
  
+    void destroyNodesEdges()
+    {
+        for (int i = 0; i < nodeCnt; i++) Destroy(nodes[i]);
+        for (int i = 0; i < edgeCnt; i++) Destroy(edges[i]);
 
+    }
 
     void init_randomEdge()
     {
@@ -136,6 +151,8 @@ public class init : MonoBehaviour
             a.x = Random.Range(-5f, 5f); a.y = Random.Range(-5f, 5f); a.z = 0;
             nodes[i] = Instantiate(node, a, Quaternion.identity);
             nodes[i].GetComponent<node>().index = i;
+            nodes[i].GetComponent<node>().neighbours = new int[nodeCnt];
+            nodes[i].GetComponent<node>().neighbourCnt = 0;
 
 
 
@@ -162,7 +179,33 @@ public class init : MonoBehaviour
         }
     }
 
+ 
 
+    public void reNetwork()
+    {
+        for (int i = 0; i < edgeCnt; i++) Destroy(edges[i]);
+        for (int i = 0; i < nodeCnt; i++) nodes[i].GetComponent<node>().neighbourCnt = 0;
+        edgeCnt = 0;
+        for (int i = 0; i < nodeCnt; i++)    // rearrange edges - random network - each nodes has a Pconnect probability to connect to every other node
+        {
+            
+            for (int j = i + 1; j < nodeCnt; j++)
+            {
+                if (Random.Range(0f, 1f) < Pconnect)
+                {
+                    edges[edgeCnt] = Instantiate(edge);
+                    edges[edgeCnt].GetComponent<edgeVertex>().v1 = nodes[i];
+                    edges[edgeCnt].GetComponent<edgeVertex>().v2 = nodes[j];
+                    nodes[i].GetComponent<node>().neighbours[nodes[i].GetComponent<node>().neighbourCnt] = j;
+                    nodes[i].GetComponent<node>().neighbourCnt++;
+                    nodes[j].GetComponent<node>().neighbours[nodes[j].GetComponent<node>().neighbourCnt] = i;
+                    nodes[j].GetComponent<node>().neighbourCnt++;
+                    edgeCnt++;
+
+                }
+            }
+        }
+    }
 
     public void nextDay()     // next day , events and infections 
     {
@@ -221,15 +264,20 @@ public class init : MonoBehaviour
                 nodes[i].GetComponent<node>().normalDected = false;
             }
             sickPercentage = 1f * sickCnt / nodeCnt;
-            if (sickPercentage >= 0.1) { quarantineCnt = 1; testCnt = 4; }
-            if (sickPercentage >= 0.2) { quarantineCnt = 2; testCnt = 4; }
-            if (sickPercentage >= 0.5) { quarantineCnt = 2; testCnt = 6; }
-            if (sickPercentage >= 0.75) { quarantineCnt = 3; testCnt = 6; }
+            
+           
 
 
 
 
         }
+        quarantineCnt = 0; testCnt = 1;
+        if (sickPercentage >= 0.05) { quarantineCnt = 0; testCnt = 3; }
+
+        if (sickPercentage >= 0.10) { quarantineCnt = 1; testCnt = 4; }
+        if (sickPercentage >= 0.20) { quarantineCnt = 2; testCnt = 6; }
+        if (sickPercentage >= 0.30) { quarantineCnt = 3; testCnt = 6; }
+        if (sickPercentage >= 0.50) { quarantineCnt = 4; testCnt = 6; }
         Debug.Log("Now, it is Day:" + daycnt);
 
         
@@ -388,6 +436,7 @@ public class init : MonoBehaviour
     void Update()
     {
         sickPercentage = 1f * sickCnt / nodeCnt;
+        if (Input.GetKeyDown(KeyCode.Escape)) Application.Quit();
         if (Input.GetKey(KeyCode.C))
         {
             Cursor.SetCursor(cursorTextureQuarantine, hotSpot, cursorMode);
@@ -425,11 +474,7 @@ public class init : MonoBehaviour
         }
         sickCnt = 0;
     }
-    public void outputSickOrder()
-    {
-        for (int i = 0; i < sickCnt; i++)
-            Debug.Log(sickOrder[i, 0] + " get sick at " + sickOrder[i, 1]);
-    }
+    
 
     public void lookBack()
     {

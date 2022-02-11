@@ -14,7 +14,7 @@ public class edgeVertex : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-
+        if (init.Instance.currentGameStarus != init.gameStatus.play) return;
         GetComponent<LineRenderer>().SetPosition(0, v1.transform.position);
         GetComponent<LineRenderer>().SetPosition(1, v2.transform.position);
 

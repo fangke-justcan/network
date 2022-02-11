@@ -7,10 +7,16 @@ public class simulation : init
     // Start is called before the first frame update
 
     int totalSimCnt = 1000;
-
+    public int[,] simResults;
+    public float[] averageSimResults ;
+    void Awake()
+    {
+        nodeCnt = -1;  // hasn't been initialized
+    }
     void Start()
     {
         nodeCnt = -1;  // hasn't been initialized
+
     }
 
     // Update is called once per frame
@@ -21,46 +27,67 @@ public class simulation : init
 
     void backToDayNow()
     {
-        for (int i = 0; i < nodeCnt; i++) nodes[i].GetComponent<node>().currentStatus = init.Instance.nodes[i].GetComponent<node>().currentStatus;
+        for (int i = 0; i < nodeCnt; i++)
+        {
+            nodes[i].GetComponent<node>().currentStatus = init.Instance.nodes[i].GetComponent<node>().currentStatus;
+            nodes[i].GetComponent<node>().lastStatus = init.Instance.nodes[i].GetComponent<node>().lastStatus;
+
+        }
         sickCnt = init.Instance.sickCnt;
         daycnt = init.Instance.daycnt;
         quarantineCnt = init.Instance.quarantineCnt;
+      
+
+      
+
     }
 
     void simInit()
     {
-        nodeCnt = init.Instance.nodeCnt;
-        nodes = new GameObject[nodeCnt];
-        daycnt = init.Instance.daycnt;
         totaldays = init.Instance.totaldays;
+        if (nodeCnt == -1)
+        {
+            nodeCnt = init.Instance.nodeCnt;
+            nodes = new GameObject[nodeCnt];
+            simResults = new int[totaldays, totalSimCnt];
+            averageSimResults = new float[totaldays];
+        }
+        
+        daycnt = init.Instance.daycnt;
+        Psick = init.Instance.Psick;
+
+       
+        
         for (int i = 0; i < nodeCnt; i++)
         {
-            nodes[i] = Instantiate(init.Instance.nodes[i], new Vector3(100, 100, 0), Quaternion.identity);    // node will not be visualized, but data is useful
+            if (nodes[i] == null) nodes[i] = Instantiate(init.Instance.nodes[i], new Vector3(100, 100, 0), Quaternion.identity);    // node will not be visualized, but data is useful
             nodes[i].GetComponent<node>().neighbourCnt = init.Instance.nodes[i].GetComponent<node>().neighbourCnt;
             for (int j = 0; j < nodes[i].GetComponent<node>().neighbourCnt; j++)
                 nodes[i].GetComponent<node>().neighbours[j] = init.Instance.nodes[i].GetComponent<node>().neighbours[j];            
         }
-        Psick = init.Instance.Psick;
-        totaldays = init.Instance.totaldays;
+       
+         
 
-        
+
     }
 
     public void startSimulation()
     {
-        if (nodeCnt == -1)  simInit(); // Initialize simulation if it hasn't been initialized
-        backToDayNow();
 
-        int[,] simResults = new int[totaldays, totalSimCnt];
-        float[] averageSimResults = new float[totaldays];
+        simInit(); // Initialize simulation 
+        backToDayNow();
+        for (int i = 0; i < totaldays; i++) averageSimResults[i] = 0;
+
         for (int iSim = 0; iSim <totalSimCnt; iSim ++)
         {
+            
             for (;daycnt< totaldays-1; )
             {
                 
 
                 nextdaySim();
                 simResults[daycnt, iSim] = sickCnt;
+                
                 averageSimResults[daycnt] += sickCnt;
 
             }
@@ -125,6 +152,8 @@ public class simulation : init
                     }
                 }
             }
+            for (int i = 0; i < nodeCnt; i++) 
+                if (nodes[i].GetComponent<node>().currentStatus == global::node.nodeStatus.Quaratine) nodes[i].GetComponent<node>().currentStatus = nodes[i].GetComponent<node>().lastStatus;
 
         }
             
