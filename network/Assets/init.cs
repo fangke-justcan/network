@@ -479,6 +479,7 @@ public class init : MonoBehaviour
     public void clearSick()
     {
         daycnt = 0;
+        showdaycnt = 0;
         quarantineCnt = 0;
         testCnt = 0;
         for (int i = 0; i < nodeCnt; i++)
