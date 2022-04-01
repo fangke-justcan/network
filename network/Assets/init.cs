@@ -66,7 +66,8 @@ public class init : MonoBehaviour
     protected node.nodeStatus[,] currentStatusHistory;
     protected int[] sickCntHistory;
     protected Vector3 a;
-
+    [HideInInspector]
+    public string dataFolder;
   
     // Start is called before the first frame update
     void Start()
@@ -78,16 +79,14 @@ public class init : MonoBehaviour
         normalDetectedHistory = new bool[nodeCnt, totaldays];
         currentStatusHistory = new node.nodeStatus[nodeCnt, totaldays];
         sickCntHistory = new int[totaldays]; 
-        
         if (thisInit == initMethod.randomNode) init_randomNode();
         else init_randomEdge();
-
         sim.startSimulation();
-        
+        // create data dir
+        dataFolder = "dataRecord/" + System.DateTime.Now.ToString("MMddHHmm");
+        System.IO.Directory.CreateDirectory(dataFolder);
+        quarantineCnt = 0; testCnt = 0;
 
-
-
-        
     }
 
  
@@ -287,14 +286,31 @@ public class init : MonoBehaviour
 
 
         }
-        quarantineCnt = 0; testCnt = 1;
-        if (sickPercentage >= 0.05) { quarantineCnt = 0; testCnt = 3; }
+        
 
+        int greenBorder = 0, redBorder = 0;
+        sim.simInit();
+        sim.backToDayNow();
+        sim.calcBorder(out redBorder, out greenBorder);
+        
+        if (sickPercentage >= 0.05) { quarantineCnt = 0; testCnt = 3; }
         if (sickPercentage >= 0.10) { quarantineCnt = 1; testCnt = 4; }
         if (sickPercentage >= 0.20) { quarantineCnt = 2; testCnt = 6; }
         if (sickPercentage >= 0.30) { quarantineCnt = 3; testCnt = 6; }
         if (sickPercentage >= 0.50) { quarantineCnt = 4; testCnt = 6; }
-        Debug.Log("Now, it is Day:" + daycnt);
+       /*
+        if (quarantineCnt< redBorder / 2) quarantineCnt = redBorder / 2;
+        if (sickPercentage < 0.25 )
+        {
+            if (testCnt < (greenBorder+redBorder) / 2) testCnt = (greenBorder+redBorder) / 2;
+
+
+        }
+        else { if (testCnt < (greenBorder) / 2) testCnt = (greenBorder) / 2; }
+       */
+
+
+        Debug.Log("Now, it is Day:" + daycnt + " redB: " + redBorder + " grennB: " + greenBorder);
 
         
     }
@@ -547,6 +563,30 @@ public class init : MonoBehaviour
 
         }
         sickCnt = sickCntHistory[day];
+    }
+
+
+
+    public void calcStats(out int maxNeighbourCnt, out int midNeighbourCnt, out int quaterHighNeighbourCnt, out float averageNeighbourCnt )
+    {
+        
+
+        List<int> sortedNeighbourCnt = new List<int>(nodeCnt);
+
+        averageNeighbourCnt = 0;
+        for (int i =0; i<nodeCnt; i++)
+        {
+            sortedNeighbourCnt.Add(nodes[i].GetComponent<node>().neighbourCnt);
+            averageNeighbourCnt += sortedNeighbourCnt[i];
+
+        }
+        sortedNeighbourCnt.Sort();
+        maxNeighbourCnt = sortedNeighbourCnt[nodeCnt - 1];
+        midNeighbourCnt = sortedNeighbourCnt[nodeCnt / 2];
+        quaterHighNeighbourCnt = sortedNeighbourCnt[nodeCnt * 3 / 4];
+        averageNeighbourCnt /= nodeCnt;
+
+
     }
 
 }
