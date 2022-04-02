@@ -12,7 +12,7 @@ public class cursorOperation : MonoBehaviour
     {
       
     }
-    private void OnMouseDown()
+    private void OnMouseDown() 
     {
         if (init.Instance.currentGameStarus != init.gameStatus.play) return;
         if (init.Instance.currentShowMode == init.showMode.past) return;

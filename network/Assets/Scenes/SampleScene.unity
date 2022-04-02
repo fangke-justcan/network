@@ -753,7 +753,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 147bec73a3d0bee4f847dcfba7d2d251, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  totaldays: 20
+  totaldays: 30
   nodeCnt: 45
   Pconnect: 0.06
   PconnectEdge: 0.01

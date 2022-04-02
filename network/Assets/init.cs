@@ -28,7 +28,7 @@ public class init : MonoBehaviour
         currentGameStarus = gameStatus.init;
     }
 
-    public int totaldays = 20;
+    public int totaldays = 30;
     public int nodeCnt = 50;
     public float Pconnect = 0.05f;
     public float PconnectEdge = 0.01f;
@@ -218,6 +218,7 @@ public class init : MonoBehaviour
             {
                 int sickIndex = Random.Range(0, nodeCnt - 1);
                 nodes[sickIndex].GetComponent<node>().currentStatus = global::node.nodeStatus.Sick;
+                nodes[sickIndex].GetComponent<node>().sickDays++;
                 sickOrder[sickCnt, 0] = sickIndex; sickOrder[sickCnt, 1] = daycnt;
                 sickCnt++;
 
@@ -273,10 +274,46 @@ public class init : MonoBehaviour
 
             for (int i = 0; i < nodeCnt; i++)   //reset Quanratine and normaldected 
             {
-                if (nodes[i].GetComponent<node>().currentStatus == global::node.nodeStatus.Quaratine)
-                { global::node.nodeStatus a = nodes[i].GetComponent<node>().lastStatus;
-                    nodes[i].GetComponent<node>().currentStatus = nodes[i].GetComponent<node>().lastStatus; }
                 nodes[i].GetComponent<node>().normalDected = false;
+                if (nodes[i].GetComponent<node>().currentStatus == global::node.nodeStatus.Quaratine)
+                {
+                    // Quaratine status has a small chance to remain red, but in most cases they will turn green! 
+
+                    if (Random.Range(0f,1f) < 0.2)
+                    {
+                        
+                        global::node.nodeStatus a = nodes[i].GetComponent<node>().lastStatus;
+                        nodes[i].GetComponent<node>().currentStatus = nodes[i].GetComponent<node>().lastStatus;
+                    
+
+                    }
+
+                    else
+                    {
+                        if (nodes[i].GetComponent<node>().lastStatus == global::node.nodeStatus.Sick) sickCnt--;
+                        nodes[i].GetComponent<node>().currentStatus = global::node.nodeStatus.Normal;
+                        nodes[i].GetComponent<node>().lastStatus = global::node.nodeStatus.Normal;
+                        nodes[i].GetComponent<node>().normalDected = true;
+                        nodes[i].GetComponent<node>().sickDetcted = false;
+                        nodes[i].GetComponent<node>().sickDays = 0;
+
+
+                    }
+                    
+
+                }
+
+            }
+            for (int i = 0; i < nodeCnt; i++)
+            {
+                if (nodes[i].GetComponent<node>().currentStatus == global::node.nodeStatus.Sick)
+                {
+                    nodes[i].GetComponent<node>().sickDays++;
+                    if (nodes[i].GetComponent<node>().sickDays >1 && sickCnt > 2 )
+                    {
+                        if (Random.Range(0f, 1f) >   0.5-0.1* nodes[i].GetComponent<node>().sickDays) nodes[i].GetComponent<node>().sickDetcted = true;  // after two days , the sick has a increasing chance to reveal the sick
+                    }
+                }   
             }
             sickPercentage = 1f * sickCnt / nodeCnt;
             
@@ -503,6 +540,7 @@ public class init : MonoBehaviour
             nodes[i].GetComponent<node>().currentStatus = global::node.nodeStatus.Normal;
             nodes[i].GetComponent<node>().sickDetcted = false;
             nodes[i].GetComponent<node>().normalDected = false;
+            nodes[i].GetComponent<node>().sickDays = 0;
 
         }
         sickCnt = 0;
