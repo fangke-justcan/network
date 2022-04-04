@@ -40,8 +40,23 @@ public class init : MonoBehaviour
     public Vector2 hotSpot = Vector2.zero;
     public GameObject nextdayButton;
     public simulation sim;
+    public float totalProductionNetwork = 0f;
+    public float totalProduction = 0f;
+    public float totalMedicalSupplyProduction = 0f;
+    public float totalVaccineResearchProduction = 0f;
+    public float specialFund = 0f;
+    public float medicalSupply = 0f;
+    public float vaccineProgress = 0f;
+    public float[] specialFundLevelRate = { 0.03f, 0.11f, 0,18f, 0.21f, 0.23f};
+    public int specialFundLevel = 0;
+    public float Qcost = 10f;
+    public float Tcost = 5f;
+    public float ResearchFinish = 30f;
+    public float VRCityConstruction = 10f;
+    public float MSCityConstruction = 5f;
 
-    
+
+
     public GameObject node,edge;
     [HideInInspector]
     public GameObject[] nodes,edges;
@@ -309,13 +324,17 @@ public class init : MonoBehaviour
                 if (nodes[i].GetComponent<node>().currentStatus == global::node.nodeStatus.Sick)
                 {
                     nodes[i].GetComponent<node>().sickDays++;
-                    if (nodes[i].GetComponent<node>().sickDays >1 && sickCnt > 2 )
+                    if (nodes[i].GetComponent<node>().sickDays >2)
                     {
-                        if (Random.Range(0f, 1f) >   0.5-0.1* nodes[i].GetComponent<node>().sickDays) nodes[i].GetComponent<node>().sickDetcted = true;  // after two days , the sick has a increasing chance to reveal the sick
+                        if (Random.Range(0f, 1f) >  Mathf.Clamp01((6-daycnt)*0.15f) + 0.7 - 0.1* nodes[i].GetComponent<node>().sickDays) nodes[i].GetComponent<node>().sickDetcted = true;  // the sick has a increasing chance to reveal, first 6 days are more likely to lurk
                     }
                 }   
             }
-            sickPercentage = 1f * sickCnt / nodeCnt;
+
+            
+            
+
+                sickPercentage = 1f * sickCnt / nodeCnt;
             
            
 
@@ -330,23 +349,23 @@ public class init : MonoBehaviour
         sim.backToDayNow();
         sim.calcBorder(out redBorder, out greenBorder);
         
-        if (sickPercentage >= 0.05) { quarantineCnt = 0; testCnt = 3; }
-        if (sickPercentage >= 0.10) { quarantineCnt = 1; testCnt = 4; }
-        if (sickPercentage >= 0.20) { quarantineCnt = 2; testCnt = 6; }
-        if (sickPercentage >= 0.30) { quarantineCnt = 3; testCnt = 6; }
-        if (sickPercentage >= 0.50) { quarantineCnt = 4; testCnt = 6; }
-       /*
-        if (quarantineCnt< redBorder / 2) quarantineCnt = redBorder / 2;
-        if (sickPercentage < 0.25 )
-        {
-            if (testCnt < (greenBorder+redBorder) / 2) testCnt = (greenBorder+redBorder) / 2;
+        if (sickPercentage >= 0.05) { quarantineCnt = 0; testCnt = 1; }
+        //if (sickPercentage >= 0.10) { quarantineCnt = 1; testCnt = 4; }
+        //if (sickPercentage >= 0.20) { quarantineCnt = 2; testCnt = 6; }
+        //if (sickPercentage >= 0.30) { quarantineCnt = 3; testCnt = 6; }
+        //if (sickPercentage >= 0.50) { quarantineCnt = 4; testCnt = 6; }
+        /*
+         if (quarantineCnt< redBorder / 2) quarantineCnt = redBorder / 2;
+         if (sickPercentage < 0.25 )
+         {
+             if (testCnt < (greenBorder+redBorder) / 2) testCnt = (greenBorder+redBorder) / 2;
 
 
-        }
-        else { if (testCnt < (greenBorder) / 2) testCnt = (greenBorder) / 2; }
-       */
+         }
+         else { if (testCnt < (greenBorder) / 2) testCnt = (greenBorder) / 2; }
+        */
 
-
+        generateResource();
         Debug.Log("Now, it is Day:" + daycnt + " redB: " + redBorder + " grennB: " + greenBorder);
 
         
@@ -504,6 +523,8 @@ public class init : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        updateAllProduction();
+        
         sickPercentage = 1f * sickCnt / nodeCnt;
         if (Input.GetKeyDown(KeyCode.Escape)) Application.Quit();
         if (Input.GetKey(KeyCode.C))
@@ -541,9 +562,14 @@ public class init : MonoBehaviour
             nodes[i].GetComponent<node>().sickDetcted = false;
             nodes[i].GetComponent<node>().normalDected = false;
             nodes[i].GetComponent<node>().sickDays = 0;
+            nodes[i].GetComponent<node>().changeNodeType(global::node.nodeProductionStatus.Normal);
 
         }
         sickCnt = 0;
+        specialFund = 0;
+        specialFundLevel = 0;
+        vaccineProgress = 0;
+        medicalSupply = 0;
     }
     
 
@@ -627,5 +653,68 @@ public class init : MonoBehaviour
 
     }
 
+    /*
+    public float specialFund = 0f;
+    public float MedicalSupply = 0f;
+    public float vaccineProgress = 0f;
+    public float[] specialFundLevelRate = { 0f, 0.05f, 0, 1f, 0.15f, 0.2f };
+    public int specialFundLevel = 0;
+    */
+    void generateResource()
+    {
+        updateAllProduction();
+        // define special Fund Level : 
+        if (sickPercentage >= 0.05) { specialFundLevel = 1; }
+        if (sickPercentage >= 0.10) { specialFundLevel = 2; }
+        if (sickPercentage >= 0.20) { specialFundLevel = 3; }
+        if (sickPercentage >= 0.30) { specialFundLevel = 4; }
+        specialFund += specialFundLevelRate[specialFundLevel] * totalProduction;
+        medicalSupply += totalMedicalSupplyProduction;
+        vaccineProgress += totalVaccineResearchProduction;  
+
+
+    }
+
+
+    void updateAllProduction()
+    {
+        totalProduction = 0f;
+        totalMedicalSupplyProduction = 0f;
+        totalVaccineResearchProduction = 0f;
+        totalProductionNetwork = 0f;
+        for (int i = 0; i < nodeCnt; i++)
+        {
+            if (nodes[i].GetComponent<node>().currentProductionStatus == global::node.nodeProductionStatus.Normal)
+                totalProduction += nodes[i].GetComponent<node>().production * nodes[i].GetComponent<node>().productionRate;
+            else if (nodes[i].GetComponent<node>().currentProductionStatus == global::node.nodeProductionStatus.Supply)
+                totalMedicalSupplyProduction += nodes[i].GetComponent<node>().production * nodes[i].GetComponent<node>().productionRate;
+            else if (nodes[i].GetComponent<node>().currentProductionStatus == global::node.nodeProductionStatus.Research)
+                totalVaccineResearchProduction += nodes[i].GetComponent<node>().production * nodes[i].GetComponent<node>().productionRate;
+
+            totalProductionNetwork += nodes[i].GetComponent<node>().production;
+        }
+        totalProduction *= 100f / totalProductionNetwork;
+        totalMedicalSupplyProduction *= 100f / totalProductionNetwork;
+        totalVaccineResearchProduction *= 100f / totalProductionNetwork;
+
+    }
+
+
+    public void buyQ()
+    {
+        if (medicalSupply >= Qcost)
+        {
+            quarantineCnt++;
+            medicalSupply -= Qcost;
+        }
+    }
+    public void buyT()
+    {
+        if (medicalSupply >= Tcost)
+        {
+            testCnt++;
+            medicalSupply -= Tcost;
+        }
+    }
 }
 

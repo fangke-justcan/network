@@ -317,7 +317,9 @@
 "Assets/init.cs"
 "Assets/initInfoPanel.cs"
 "Assets/node.cs"
+"Assets/nodeProduction.cs"
 "Assets/RandomMove.cs"
+"Assets/resourcePanel.cs"
 "Assets/simulation.cs"
 "Assets/writeFile.cs"
 -langversion:8.0

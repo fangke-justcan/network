@@ -54,6 +54,7 @@ public class initInfoPanel : MonoBehaviour
         if (init.Instance.currentGameStarus == init.gameStatus.play) initPanel.SetActive(false);
         PconnectText.text = "Pconnect=" + init.Instance.Pconnect;
         PsickText.text = "Psick=" + init.Instance.Psick;
+        //PsickText.text = "Psick=" + init.Instance.Psick;
         ParaText.text = "Total Edge Count   = " + init.Instance.edgeCnt + "\nDay 5 Percentage = " + sim.averageSimResults[5] / init.Instance.nodeCnt + "\nDay10 Percentage = " + sim.averageSimResults[10] / init.Instance.nodeCnt;
 
 
