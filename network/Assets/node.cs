@@ -14,7 +14,7 @@ public class node : MonoBehaviour
     public TextMesh indexName;
     public int sickDays = 0;
   
-    public enum nodeStatus { Normal, Sick , Quaratine};
+    public enum nodeStatus { Normal, Sick , Quaratine, Vaccinated};
     public enum nodeProductionStatus { Normal, Supply, Research };
     public bool sickDetcted = false;
     public bool normalDected = false; 
@@ -45,8 +45,8 @@ public class node : MonoBehaviour
         if (currentStatus == nodeStatus.Normal && !normalDected) { GetComponent<SpriteRenderer>().color = Color.blue; productionRate = 1f; }
         if (currentStatus == nodeStatus.Normal && normalDected) { GetComponent<SpriteRenderer>().color = Color.green; productionRate = 1f; }
         if (currentStatus == nodeStatus.Quaratine) { GetComponent<SpriteRenderer>().color = Color.black; productionRate = 0f; }
-
-            if (neighbourCnt > 4) transform.localScale = new Vector3(3, 3, 1);
+        if (currentStatus == nodeStatus.Vaccinated) { GetComponent<SpriteRenderer>().color = Color.yellow; productionRate = 1f; }
+        if (neighbourCnt > 4) transform.localScale = new Vector3(3, 3, 1);
         else if (neighbourCnt > 2) transform.localScale = new Vector3(2f, 2f, 1);
 
 

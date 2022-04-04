@@ -52,9 +52,12 @@ public class init : MonoBehaviour
     public float Qcost = 10f;
     public float Tcost = 5f;
     public float ResearchFinish = 30f;
-    public float VRCityConstruction = 10f;
-    public float MSCityConstruction = 5f;
-
+    public float VRCityConstruction = 100f;
+    public float MSCityConstruction = 80f;
+    public float MSCityConstructionIncrease = 10f;
+    public float totalIncome = 0f;
+    public float scientificModellingCost = 10f;
+    float MSCityConstructionOrigin; 
 
 
     public GameObject node,edge;
@@ -101,6 +104,7 @@ public class init : MonoBehaviour
         dataFolder = "dataRecord/" + System.DateTime.Now.ToString("MMddHHmm");
         System.IO.Directory.CreateDirectory(dataFolder);
         quarantineCnt = 0; testCnt = 0;
+        MSCityConstructionOrigin = MSCityConstruction;
 
     }
 
@@ -277,7 +281,7 @@ public class init : MonoBehaviour
             {
                 if (nodes[nextSick[i]].GetComponent<node>().currentStatus != global::node.nodeStatus.Sick)
                 {
-                    if (nodes[nextSick[i]].GetComponent<node>().currentStatus != global::node.nodeStatus.Quaratine)
+                    if (nodes[nextSick[i]].GetComponent<node>().currentStatus != global::node.nodeStatus.Quaratine && nodes[nextSick[i]].GetComponent<node>().currentStatus != global::node.nodeStatus.Vaccinated)
                     {
                         nodes[nextSick[i]].GetComponent<node>().currentStatus = global::node.nodeStatus.Sick;
                         sickOrder[sickCnt, 0] = nextSick[i]; sickOrder[sickCnt, 1] = daycnt;
@@ -317,6 +321,11 @@ public class init : MonoBehaviour
                     
 
                 }
+                if (nodes[i].GetComponent<node>().currentStatus == global::node.nodeStatus.Vaccinated) // reset vaccinated 
+                {
+                    if (nodes[i].GetComponent<node>().lastStatus == global::node.nodeStatus.Sick) sickCnt--;
+                    nodes[i].GetComponent<node>().lastStatus = global::node.nodeStatus.Vaccinated;
+                }
 
             }
             for (int i = 0; i < nodeCnt; i++)
@@ -326,7 +335,7 @@ public class init : MonoBehaviour
                     nodes[i].GetComponent<node>().sickDays++;
                     if (nodes[i].GetComponent<node>().sickDays >2)
                     {
-                        if (Random.Range(0f, 1f) >  Mathf.Clamp01((6-daycnt)*0.15f) + 0.7 - 0.1* nodes[i].GetComponent<node>().sickDays) nodes[i].GetComponent<node>().sickDetcted = true;  // the sick has a increasing chance to reveal, first 6 days are more likely to lurk
+                        if (Random.Range(0f, 1f) >  Mathf.Clamp01((6-daycnt)*0.15f) + Mathf.Clamp01((5 - sickCnt) * 0.15f) + 0.7 - 0.1* nodes[i].GetComponent<node>().sickDays) nodes[i].GetComponent<node>().sickDetcted = true;  // the sick has a increasing chance to reveal, first 6 days are more likely to lurk
                     }
                 }   
             }
@@ -544,10 +553,6 @@ public class init : MonoBehaviour
             currentCursor = cursorState.normal;
         }
 
-
-
-
-
     }
 
     public void clearSick()
@@ -570,6 +575,8 @@ public class init : MonoBehaviour
         specialFundLevel = 0;
         vaccineProgress = 0;
         medicalSupply = 0;
+        totalIncome = 0;
+        MSCityConstruction = MSCityConstructionOrigin;
     }
     
 
@@ -669,8 +676,10 @@ public class init : MonoBehaviour
         if (sickPercentage >= 0.20) { specialFundLevel = 3; }
         if (sickPercentage >= 0.30) { specialFundLevel = 4; }
         specialFund += specialFundLevelRate[specialFundLevel] * totalProduction;
-        medicalSupply += totalMedicalSupplyProduction;
-        vaccineProgress += totalVaccineResearchProduction;  
+        medicalSupply = medicalSupply*0.3f + totalMedicalSupplyProduction;
+        totalIncome += totalProduction;
+        vaccineProgress += totalVaccineResearchProduction;
+        if (vaccineProgress > ResearchFinish) vaccineProgress = ResearchFinish;
 
 
     }
@@ -682,12 +691,16 @@ public class init : MonoBehaviour
         totalMedicalSupplyProduction = 0f;
         totalVaccineResearchProduction = 0f;
         totalProductionNetwork = 0f;
+        int msinfected = 0;
         for (int i = 0; i < nodeCnt; i++)
         {
             if (nodes[i].GetComponent<node>().currentProductionStatus == global::node.nodeProductionStatus.Normal)
                 totalProduction += nodes[i].GetComponent<node>().production * nodes[i].GetComponent<node>().productionRate;
             else if (nodes[i].GetComponent<node>().currentProductionStatus == global::node.nodeProductionStatus.Supply)
+            {
                 totalMedicalSupplyProduction += nodes[i].GetComponent<node>().production * nodes[i].GetComponent<node>().productionRate;
+                if (nodes[i].GetComponent<node>().productionRate < 1) msinfected ++;
+            }
             else if (nodes[i].GetComponent<node>().currentProductionStatus == global::node.nodeProductionStatus.Research)
                 totalVaccineResearchProduction += nodes[i].GetComponent<node>().production * nodes[i].GetComponent<node>().productionRate;
 
@@ -696,6 +709,7 @@ public class init : MonoBehaviour
         totalProduction *= 100f / totalProductionNetwork;
         totalMedicalSupplyProduction *= 100f / totalProductionNetwork;
         totalVaccineResearchProduction *= 100f / totalProductionNetwork;
+        for (; msinfected>0;msinfected--) totalMedicalSupplyProduction *= 0.8f;
 
     }
 
