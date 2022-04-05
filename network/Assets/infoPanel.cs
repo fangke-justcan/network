@@ -16,7 +16,7 @@ public class infoPanel : MonoBehaviour
     public InputField ResearchCity;
     public Text researchCityButton;
     public Text medicalSupplyCityButton;
-
+    public GameObject initPanel;
 
 
 
@@ -121,5 +121,11 @@ public class infoPanel : MonoBehaviour
         }
     }
     
+    public void backToMainMenu()
+    { 
+        init.Instance.currentGameStarus = init.gameStatus.init;
+        initPanel.SetActive(true);
+        
+    }
 
 }

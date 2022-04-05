@@ -7,16 +7,18 @@ public class nodeProduction : MonoBehaviour
 {
     // Start is called before the first frame update
     public GameObject NPtext;
+    public GameObject explainer;
 
     private void Start()
     {
         NPtext = GameObject.FindWithTag("NProduction");
+        explainer = GameObject.FindWithTag("TCexplainer");
     }
 
     private void OnMouseOver()
     {
-       
 
+        explainer.SetActive(false);
         NPtext.GetComponent<Text>().text = "Node:" + GetComponent<node>().index + "\n节点产能: " + (GetComponent<node>().production*100f/init.Instance.totalProductionNetwork).ToString("f1")+ "万/套/" + (GetComponent<node>().production * 100f / init.Instance.totalProductionNetwork *100/ init.Instance.ResearchFinish).ToString("f1") + "%";
         if (GetComponent<node>().normalDected == true || GetComponent<node>().sickDetcted == true)
 
@@ -34,6 +36,7 @@ public class nodeProduction : MonoBehaviour
     private void OnMouseExit()
     {
         NPtext.GetComponent<Text>().text = "";
+        explainer.SetActive(true);
     }
 
 }

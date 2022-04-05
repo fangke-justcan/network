@@ -2,13 +2,17 @@ ScriptsOnlyBuild:
   usedScripts:
     Assembly-CSharp.dll:
     - RandomMove
+    - cityPanel
     - cursorOperation
     - draganddrop
     - edgeVertex
     - infoPanel
     - init
     - initInfoPanel
+    - loadingPanel
     - node
+    - nodeProduction
+    - resourcePanel
     - simulation
     Unity.Rider.Editor.dll:
     - Packages.Rider.Editor.UnitTesting.CallbackData
@@ -23,6 +27,7 @@ ScriptsOnlyBuild:
     - UnityEngine.UI.CanvasScaler
     - UnityEngine.UI.GraphicRaycaster
     - UnityEngine.UI.Image
+    - UnityEngine.UI.InputField
     - UnityEngine.UI.Slider
     - UnityEngine.UI.Text
     - UnityEngine.UI.Toggle
@@ -67,31 +72,41 @@ ScriptsOnlyBuild:
     - Class: 114
       Script: {instanceID: 1716}
     - Class: 114
-      Script: {instanceID: 1758}
+      Script: {instanceID: 1750}
     - Class: 114
-      Script: {instanceID: 2050}
+      Script: {instanceID: 1760}
     - Class: 114
-      Script: {instanceID: 2230}
+      Script: {instanceID: 2052}
     - Class: 114
-      Script: {instanceID: 2638}
+      Script: {instanceID: 2232}
     - Class: 114
-      Script: {instanceID: 2654}
+      Script: {instanceID: 2640}
     - Class: 114
-      Script: {instanceID: 2820}
+      Script: {instanceID: 2656}
     - Class: 114
-      Script: {instanceID: 3028}
+      Script: {instanceID: 2822}
     - Class: 114
-      Script: {instanceID: 3052}
+      Script: {instanceID: 3030}
     - Class: 114
-      Script: {instanceID: 3174}
+      Script: {instanceID: 3056}
     - Class: 114
-      Script: {instanceID: 3366}
+      Script: {instanceID: 3128}
     - Class: 114
-      Script: {instanceID: 3446}
+      Script: {instanceID: 3178}
     - Class: 114
-      Script: {instanceID: 3506}
+      Script: {instanceID: 3370}
     - Class: 114
-      Script: {instanceID: 3562}
+      Script: {instanceID: 3450}
+    - Class: 114
+      Script: {instanceID: 3510}
+    - Class: 114
+      Script: {instanceID: 3550}
+    - Class: 114
+      Script: {instanceID: 3568}
+    - Class: 114
+      Script: {instanceID: 18016}
+    - Class: 114
+      Script: {instanceID: 41846}
     - Class: 115
       Script: {instanceID: 0}
     - Class: 120
@@ -141,7 +156,7 @@ ScriptsOnlyBuild:
     className: ContentSizeFitter
   - hash:
       serializedVersion: 2
-      Hash: 6e51d6e449f560ea5b411b12b7cbdfd1
+      Hash: c2afe437200b60691e4e229023223c14
     assemblyName: Assembly-CSharp.dll
     namespaceName: 
     className: infoPanel
@@ -219,6 +234,12 @@ ScriptsOnlyBuild:
     className: PlayerQuitHandler
   - hash:
       serializedVersion: 2
+      Hash: 7f697b7a8ca33eb85bac965c5320e05d
+    assemblyName: Assembly-CSharp.dll
+    namespaceName: 
+    className: nodeProduction
+  - hash:
+      serializedVersion: 2
       Hash: 71bb6a6b6c8f052f948db64c7dd3ca4f
     assemblyName: Assembly-CSharp.dll
     namespaceName: 
@@ -279,7 +300,7 @@ ScriptsOnlyBuild:
     className: AudioPlayableAsset
   - hash:
       serializedVersion: 2
-      Hash: 634cc3525b31f6f95e8b1344d768dd4b
+      Hash: f2c15e80252d149f21489b1d14c49bb1
     assemblyName: Assembly-CSharp.dll
     namespaceName: 
     className: node
@@ -549,7 +570,7 @@ ScriptsOnlyBuild:
     className: SignalEmitter
   - hash:
       serializedVersion: 2
-      Hash: a3de435842bee70de54bb3cb369edb56
+      Hash: fb242431ec350ca184e682969a5638db
     assemblyName: Assembly-CSharp.dll
     namespaceName: 
     className: simulation
@@ -585,13 +606,19 @@ ScriptsOnlyBuild:
     className: GridLayoutGroup
   - hash:
       serializedVersion: 2
+      Hash: 17eba4bb2ab512bcfcf3b381abfa823b
+    assemblyName: Assembly-CSharp.dll
+    namespaceName: 
+    className: resourcePanel
+  - hash:
+      serializedVersion: 2
       Hash: abf1930d8126d0b2e00e9449129a0190
     assemblyName: UnityEngine.UI.dll
     namespaceName: UnityEngine.EventSystems
     className: TouchInputModule
   - hash:
       serializedVersion: 2
-      Hash: f77838c292f657462604b798c429370f
+      Hash: 3cfd61a55290bdf9a2aa8f1e77e4d248
     assemblyName: Assembly-CSharp.dll
     namespaceName: 
     className: init
@@ -601,7 +628,19 @@ ScriptsOnlyBuild:
     assemblyName: Unity.TextMeshPro.dll
     namespaceName: TMPro
     className: TextContainer
+  - hash:
+      serializedVersion: 2
+      Hash: 28fbf0d6620030e9c9a7e537bc729af1
+    assemblyName: Assembly-CSharp.dll
+    namespaceName: 
+    className: loadingPanel
+  - hash:
+      serializedVersion: 2
+      Hash: 23f3151b7ab9a3a9104ddb4f20c1da69
+    assemblyName: Assembly-CSharp.dll
+    namespaceName: 
+    className: cityPanel
   platform: 19
   scenePathNames:
   - Assets/Scenes/SampleScene.unity
-  playerPath: D:/imdt/network build/network.exe
+  playerPath: D:/IMDT/network_virus_build220405/network.exe

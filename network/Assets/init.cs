@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class init : MonoBehaviour
 {
@@ -57,8 +58,13 @@ public class init : MonoBehaviour
     public float MSCityConstructionIncrease = 10f;
     public float totalIncome = 0f;
     public float scientificModellingCost = 10f;
-    float MSCityConstructionOrigin; 
+    public GameObject loadingPanel;
+    public Slider loadingSlider;
+    public GameObject loadingOKButton;
+    public Text loadingText;
 
+    float MSCityConstructionOrigin;
+    int failedFirstSick = 0;
 
     public GameObject node,edge;
     [HideInInspector]
@@ -225,35 +231,60 @@ public class init : MonoBehaviour
         }
     }
 
+    IEnumerator tryStartGame()
+    {
+        while (failedFirstSick >= 0)
+        {
+            loadingOKButton.SetActive(false);
+            loadingText.text = "Try Starting...";
+            yield return null;
+            
+            int sickIndex = Random.Range(0, nodeCnt - 1);
+            nodes[sickIndex].GetComponent<node>().currentStatus = global::node.nodeStatus.Sick;
+            nodes[sickIndex].GetComponent<node>().sickDays++;
+            sickOrder[sickCnt, 0] = sickIndex; sickOrder[sickCnt, 1] = daycnt;
+            sickCnt++;
+
+            sim.startSimulation();
+            if (sim.averageSimResults[10] / nodeCnt > 0.6 && sim.averageSimResults[10] / nodeCnt < 0.75)
+            {
+                failedFirstSick = -100;
+                loadingText.text = "Start Game Success!";
+                loadingOKButton.SetActive(true);
+            }
+            else
+            {
+                clearSick();
+                Debug.Log("try" + failedFirstSick + "end: " + sim.averageSimResults[10] / nodeCnt);
+                
+                failedFirstSick++;
+
+            }
+            if (failedFirstSick >= 10)
+            {
+                loadingText.text = "Start Game Failed, pls change the config";
+                currentGameStarus = gameStatus.init;
+                Debug.Log("Failed first Sick, pls change the config");
+                loadingOKButton.SetActive(true);
+                break;
+            }
+            
+
+        }
+       
+    }
+
+
     public void nextDay()     // next day , events and infections 
     {
         save(daycnt);
         daycnt++; showdaycnt = daycnt;
-        if (sickCnt == 0)   // the first day 
+        if (sickCnt == 0 && daycnt ==1)   // the first day 
         {
-
-            int failedFirstSick = 0;
-            while (failedFirstSick >=0)
-            {
-                int sickIndex = Random.Range(0, nodeCnt - 1);
-                nodes[sickIndex].GetComponent<node>().currentStatus = global::node.nodeStatus.Sick;
-                nodes[sickIndex].GetComponent<node>().sickDays++;
-                sickOrder[sickCnt, 0] = sickIndex; sickOrder[sickCnt, 1] = daycnt;
-                sickCnt++;
-
-                sim.startSimulation();
-                if (sim.averageSimResults[10]/nodeCnt > 0.6 && sim.averageSimResults[10]/nodeCnt < 0.75) failedFirstSick = -100;
-                else { clearSick(); Debug.Log( "try"+ failedFirstSick +"end: " + sim.averageSimResults[10] / nodeCnt); failedFirstSick++; }
-                if (failedFirstSick >= 10) 
-                { 
-                    Debug.Log("Failed first Sick, pls change the config"); 
-                    
-                    break; 
-                }
-
-            }
-
-
+            failedFirstSick = 0;
+            loadingPanel.SetActive(true);
+            StartCoroutine(tryStartGame());
+       
         }
         else
         {
@@ -358,7 +389,7 @@ public class init : MonoBehaviour
         sim.backToDayNow();
         sim.calcBorder(out redBorder, out greenBorder);
         
-        if (sickPercentage >= 0.05) { quarantineCnt = 0; testCnt = 1; }
+        if (sickPercentage >= 0.00) { quarantineCnt = 0; testCnt = 1; }
         //if (sickPercentage >= 0.10) { quarantineCnt = 1; testCnt = 4; }
         //if (sickPercentage >= 0.20) { quarantineCnt = 2; testCnt = 6; }
         //if (sickPercentage >= 0.30) { quarantineCnt = 3; testCnt = 6; }
@@ -533,7 +564,8 @@ public class init : MonoBehaviour
     void Update()
     {
         updateAllProduction();
-        
+        loadingSlider.value = failedFirstSick;
+
         sickPercentage = 1f * sickCnt / nodeCnt;
         if (Input.GetKeyDown(KeyCode.Escape)) Application.Quit();
         if (Input.GetKey(KeyCode.C))
@@ -729,6 +761,11 @@ public class init : MonoBehaviour
             testCnt++;
             medicalSupply -= Tcost;
         }
+    }
+
+    public void quitgame()
+    {
+        Application.Quit();
     }
 }
 
