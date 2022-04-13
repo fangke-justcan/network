@@ -12,23 +12,45 @@ public class cursorOperation : MonoBehaviour
     {
       
     }
-    private void OnMouseDown()
+    private void OnMouseDown() 
     {
         if (init.Instance.currentGameStarus != init.gameStatus.play) return;
         if (init.Instance.currentShowMode == init.showMode.past) return;
         if (init.Instance.currentCursor == init.cursorState.quarantine )   
         {
-            if (GetComponent<node>().currentStatus != node.nodeStatus.Quaratine && init.Instance.quarantineCnt > 0)
+            if (init.Instance.vaccineProgress >= init.Instance.ResearchFinish)
             {
-                GetComponent<node>().lastStatus = GetComponent<node>().currentStatus;
-                GetComponent<node>().currentStatus = node.nodeStatus.Quaratine;
-                init.Instance.quarantineCnt--;
+                if (GetComponent<node>().currentStatus != node.nodeStatus.Vaccinated && init.Instance.quarantineCnt > 0)
+                {
+                    GetComponent<node>().lastStatus = GetComponent<node>().currentStatus;
+
+                    GetComponent<node>().currentStatus = node.nodeStatus.Vaccinated;
+                    init.Instance.quarantineCnt--;
+                }
+                else if (GetComponent<node>().currentStatus == node.nodeStatus.Vaccinated)
+                {
+                    GetComponent<node>().currentStatus = GetComponent<node>().lastStatus;
+                    init.Instance.quarantineCnt++;
+                }
             }
-            else if (GetComponent<node>().currentStatus == node.nodeStatus.Quaratine)
+            else
             {
-                GetComponent<node>().currentStatus = GetComponent<node>().lastStatus;
-                init.Instance.quarantineCnt++;
+                if (GetComponent<node>().currentStatus != node.nodeStatus.Quaratine && init.Instance.quarantineCnt > 0)
+                {
+                    GetComponent<node>().lastStatus = GetComponent<node>().currentStatus;
+
+                    GetComponent<node>().currentStatus = node.nodeStatus.Quaratine;
+                    init.Instance.quarantineCnt--;
+                }
+                else if (GetComponent<node>().currentStatus == node.nodeStatus.Quaratine)
+                {
+                    GetComponent<node>().currentStatus = GetComponent<node>().lastStatus;
+                    init.Instance.quarantineCnt++;
+                }
+
             }
+
+            
 
         }
 

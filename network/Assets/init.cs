@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class init : MonoBehaviour
 {
@@ -28,7 +29,7 @@ public class init : MonoBehaviour
         currentGameStarus = gameStatus.init;
     }
 
-    public int totaldays = 20;
+    public int totaldays = 30;
     public int nodeCnt = 50;
     public float Pconnect = 0.05f;
     public float PconnectEdge = 0.01f;
@@ -40,8 +41,31 @@ public class init : MonoBehaviour
     public Vector2 hotSpot = Vector2.zero;
     public GameObject nextdayButton;
     public simulation sim;
+    public float totalProductionNetwork = 0f;
+    public float totalProduction = 0f;
+    public float totalMedicalSupplyProduction = 0f;
+    public float totalVaccineResearchProduction = 0f;
+    public float specialFund = 0f;
+    public float medicalSupply = 0f;
+    public float vaccineProgress = 0f;
+    public float[] specialFundLevelRate = { 0.03f, 0.11f, 0,18f, 0.21f, 0.23f};
+    public int specialFundLevel = 0;
+    public float Qcost = 10f;
+    public float Tcost = 5f;
+    public float ResearchFinish = 30f;
+    public float VRCityConstruction = 100f;
+    public float MSCityConstruction = 80f;
+    public float MSCityConstructionIncrease = 10f;
+    public float totalIncome = 0f;
+    public float scientificModellingCost = 10f;
+    public GameObject loadingPanel;
+    public Slider loadingSlider;
+    public GameObject loadingOKButton;
+    public Text loadingText;
 
-    
+    float MSCityConstructionOrigin;
+    int failedFirstSick = 0;
+
     public GameObject node,edge;
     [HideInInspector]
     public GameObject[] nodes,edges;
@@ -66,7 +90,8 @@ public class init : MonoBehaviour
     protected node.nodeStatus[,] currentStatusHistory;
     protected int[] sickCntHistory;
     protected Vector3 a;
-
+    [HideInInspector]
+    public string dataFolder;
   
     // Start is called before the first frame update
     void Start()
@@ -78,16 +103,15 @@ public class init : MonoBehaviour
         normalDetectedHistory = new bool[nodeCnt, totaldays];
         currentStatusHistory = new node.nodeStatus[nodeCnt, totaldays];
         sickCntHistory = new int[totaldays]; 
-        
         if (thisInit == initMethod.randomNode) init_randomNode();
         else init_randomEdge();
-
         sim.startSimulation();
-        
+        // create data dir
+        dataFolder = "dataRecord/" + System.DateTime.Now.ToString("MMddHHmm");
+        System.IO.Directory.CreateDirectory(dataFolder);
+        quarantineCnt = 0; testCnt = 0;
+        MSCityConstructionOrigin = MSCityConstruction;
 
-
-
-        
     }
 
  
@@ -207,18 +231,60 @@ public class init : MonoBehaviour
         }
     }
 
+    IEnumerator tryStartGame()
+    {
+        while (failedFirstSick >= 0)
+        {
+            loadingOKButton.SetActive(false);
+            loadingText.text = "Try Starting...";
+            yield return null;
+            
+            int sickIndex = Random.Range(0, nodeCnt - 1);
+            nodes[sickIndex].GetComponent<node>().currentStatus = global::node.nodeStatus.Sick;
+            nodes[sickIndex].GetComponent<node>().sickDays++;
+            sickOrder[sickCnt, 0] = sickIndex; sickOrder[sickCnt, 1] = daycnt;
+            sickCnt++;
+
+            sim.startSimulation();
+            if (sim.averageSimResults[10] / nodeCnt > 0.6 && sim.averageSimResults[10] / nodeCnt < 0.75)
+            {
+                failedFirstSick = -100;
+                loadingText.text = "Start Game Success!";
+                loadingOKButton.SetActive(true);
+            }
+            else
+            {
+                clearSick();
+                Debug.Log("try" + failedFirstSick + "end: " + sim.averageSimResults[10] / nodeCnt);
+                
+                failedFirstSick++;
+
+            }
+            if (failedFirstSick >= 10)
+            {
+                loadingText.text = "Start Game Failed, pls change the config";
+                currentGameStarus = gameStatus.init;
+                Debug.Log("Failed first Sick, pls change the config");
+                loadingOKButton.SetActive(true);
+                break;
+            }
+            
+
+        }
+       
+    }
+
+
     public void nextDay()     // next day , events and infections 
     {
         save(daycnt);
         daycnt++; showdaycnt = daycnt;
-        if (sickCnt == 0)   // the first day 
+        if (sickCnt == 0 && daycnt ==1)   // the first day 
         {
-            int sickIndex = Random.Range(0, nodeCnt - 1);
-            nodes[sickIndex].GetComponent<node>().currentStatus = global::node.nodeStatus.Sick;
-            sickOrder[sickCnt, 0] = sickIndex; sickOrder[sickCnt, 1] = daycnt;
-            sickCnt++;
-            
-           
+            failedFirstSick = 0;
+            loadingPanel.SetActive(true);
+            StartCoroutine(tryStartGame());
+       
         }
         else
         {
@@ -246,7 +312,7 @@ public class init : MonoBehaviour
             {
                 if (nodes[nextSick[i]].GetComponent<node>().currentStatus != global::node.nodeStatus.Sick)
                 {
-                    if (nodes[nextSick[i]].GetComponent<node>().currentStatus != global::node.nodeStatus.Quaratine)
+                    if (nodes[nextSick[i]].GetComponent<node>().currentStatus != global::node.nodeStatus.Quaratine && nodes[nextSick[i]].GetComponent<node>().currentStatus != global::node.nodeStatus.Vaccinated)
                     {
                         nodes[nextSick[i]].GetComponent<node>().currentStatus = global::node.nodeStatus.Sick;
                         sickOrder[sickCnt, 0] = nextSick[i]; sickOrder[sickCnt, 1] = daycnt;
@@ -258,12 +324,57 @@ public class init : MonoBehaviour
 
             for (int i = 0; i < nodeCnt; i++)   //reset Quanratine and normaldected 
             {
-                if (nodes[i].GetComponent<node>().currentStatus == global::node.nodeStatus.Quaratine)
-                { global::node.nodeStatus a = nodes[i].GetComponent<node>().lastStatus;
-                    nodes[i].GetComponent<node>().currentStatus = nodes[i].GetComponent<node>().lastStatus; }
                 nodes[i].GetComponent<node>().normalDected = false;
+                if (nodes[i].GetComponent<node>().currentStatus == global::node.nodeStatus.Quaratine)
+                {
+                    // Quaratine status has a small chance to remain red, but in most cases they will turn green! 
+
+                    if (Random.Range(0f,1f) < 0.2)
+                    {
+                        
+                        global::node.nodeStatus a = nodes[i].GetComponent<node>().lastStatus;
+                        nodes[i].GetComponent<node>().currentStatus = nodes[i].GetComponent<node>().lastStatus;
+                    
+
+                    }
+
+                    else
+                    {
+                        if (nodes[i].GetComponent<node>().lastStatus == global::node.nodeStatus.Sick) sickCnt--;
+                        nodes[i].GetComponent<node>().currentStatus = global::node.nodeStatus.Normal;
+                        nodes[i].GetComponent<node>().lastStatus = global::node.nodeStatus.Normal;
+                        nodes[i].GetComponent<node>().normalDected = true;
+                        nodes[i].GetComponent<node>().sickDetcted = false;
+                        nodes[i].GetComponent<node>().sickDays = 0;
+
+
+                    }
+                    
+
+                }
+                if (nodes[i].GetComponent<node>().currentStatus == global::node.nodeStatus.Vaccinated) // reset vaccinated 
+                {
+                    if (nodes[i].GetComponent<node>().lastStatus == global::node.nodeStatus.Sick) sickCnt--;
+                    nodes[i].GetComponent<node>().lastStatus = global::node.nodeStatus.Vaccinated;
+                }
+
             }
-            sickPercentage = 1f * sickCnt / nodeCnt;
+            for (int i = 0; i < nodeCnt; i++)
+            {
+                if (nodes[i].GetComponent<node>().currentStatus == global::node.nodeStatus.Sick)
+                {
+                    nodes[i].GetComponent<node>().sickDays++;
+                    if (nodes[i].GetComponent<node>().sickDays >2)
+                    {
+                        if (Random.Range(0f, 1f) >  Mathf.Clamp01((6-daycnt)*0.15f) + Mathf.Clamp01((5 - sickCnt) * 0.15f) + 0.7 - 0.1* nodes[i].GetComponent<node>().sickDays) nodes[i].GetComponent<node>().sickDetcted = true;  // the sick has a increasing chance to reveal, first 6 days are more likely to lurk
+                    }
+                }   
+            }
+
+            
+            
+
+                sickPercentage = 1f * sickCnt / nodeCnt;
             
            
 
@@ -271,14 +382,31 @@ public class init : MonoBehaviour
 
 
         }
-        quarantineCnt = 0; testCnt = 1;
-        if (sickPercentage >= 0.05) { quarantineCnt = 0; testCnt = 3; }
+        
 
-        if (sickPercentage >= 0.10) { quarantineCnt = 1; testCnt = 4; }
-        if (sickPercentage >= 0.20) { quarantineCnt = 2; testCnt = 6; }
-        if (sickPercentage >= 0.30) { quarantineCnt = 3; testCnt = 6; }
-        if (sickPercentage >= 0.50) { quarantineCnt = 4; testCnt = 6; }
-        Debug.Log("Now, it is Day:" + daycnt);
+        int greenBorder = 0, redBorder = 0;
+        sim.simInit();
+        sim.backToDayNow();
+        sim.calcBorder(out redBorder, out greenBorder);
+        
+        if (sickPercentage >= 0.00) { quarantineCnt = 0; testCnt = 1; }
+        //if (sickPercentage >= 0.10) { quarantineCnt = 1; testCnt = 4; }
+        //if (sickPercentage >= 0.20) { quarantineCnt = 2; testCnt = 6; }
+        //if (sickPercentage >= 0.30) { quarantineCnt = 3; testCnt = 6; }
+        //if (sickPercentage >= 0.50) { quarantineCnt = 4; testCnt = 6; }
+        /*
+         if (quarantineCnt< redBorder / 2) quarantineCnt = redBorder / 2;
+         if (sickPercentage < 0.25 )
+         {
+             if (testCnt < (greenBorder+redBorder) / 2) testCnt = (greenBorder+redBorder) / 2;
+
+
+         }
+         else { if (testCnt < (greenBorder) / 2) testCnt = (greenBorder) / 2; }
+        */
+
+        generateResource();
+        Debug.Log("Now, it is Day:" + daycnt + " redB: " + redBorder + " grennB: " + greenBorder);
 
         
     }
@@ -435,6 +563,9 @@ public class init : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        updateAllProduction();
+        loadingSlider.value = failedFirstSick;
+
         sickPercentage = 1f * sickCnt / nodeCnt;
         if (Input.GetKeyDown(KeyCode.Escape)) Application.Quit();
         if (Input.GetKey(KeyCode.C))
@@ -454,15 +585,12 @@ public class init : MonoBehaviour
             currentCursor = cursorState.normal;
         }
 
-
-
-
-
     }
 
     public void clearSick()
     {
         daycnt = 0;
+        showdaycnt = 0;
         quarantineCnt = 0;
         testCnt = 0;
         for (int i = 0; i < nodeCnt; i++)
@@ -470,9 +598,17 @@ public class init : MonoBehaviour
             nodes[i].GetComponent<node>().currentStatus = global::node.nodeStatus.Normal;
             nodes[i].GetComponent<node>().sickDetcted = false;
             nodes[i].GetComponent<node>().normalDected = false;
+            nodes[i].GetComponent<node>().sickDays = 0;
+            nodes[i].GetComponent<node>().changeNodeType(global::node.nodeProductionStatus.Normal);
 
         }
         sickCnt = 0;
+        specialFund = 0;
+        specialFundLevel = 0;
+        vaccineProgress = 0;
+        medicalSupply = 0;
+        totalIncome = 0;
+        MSCityConstruction = MSCityConstructionOrigin;
     }
     
 
@@ -532,5 +668,104 @@ public class init : MonoBehaviour
         sickCnt = sickCntHistory[day];
     }
 
+
+
+    public void calcStats(out int maxNeighbourCnt, out int midNeighbourCnt, out int quaterHighNeighbourCnt, out float averageNeighbourCnt )
+    {
+        
+
+        List<int> sortedNeighbourCnt = new List<int>(nodeCnt);
+
+        averageNeighbourCnt = 0;
+        for (int i =0; i<nodeCnt; i++)
+        {
+            sortedNeighbourCnt.Add(nodes[i].GetComponent<node>().neighbourCnt);
+            averageNeighbourCnt += sortedNeighbourCnt[i];
+
+        }
+        sortedNeighbourCnt.Sort();
+        maxNeighbourCnt = sortedNeighbourCnt[nodeCnt - 1];
+        midNeighbourCnt = sortedNeighbourCnt[nodeCnt / 2];
+        quaterHighNeighbourCnt = sortedNeighbourCnt[nodeCnt * 3 / 4];
+        averageNeighbourCnt /= nodeCnt;
+
+
+    }
+
+    /*
+    public float specialFund = 0f;
+    public float MedicalSupply = 0f;
+    public float vaccineProgress = 0f;
+    public float[] specialFundLevelRate = { 0f, 0.05f, 0, 1f, 0.15f, 0.2f };
+    public int specialFundLevel = 0;
+    */
+    void generateResource()
+    {
+        updateAllProduction();
+        // define special Fund Level : 
+        if (sickPercentage >= 0.05) { specialFundLevel = 1; }
+        if (sickPercentage >= 0.10) { specialFundLevel = 2; }
+        if (sickPercentage >= 0.20) { specialFundLevel = 3; }
+        if (sickPercentage >= 0.30) { specialFundLevel = 4; }
+        specialFund += specialFundLevelRate[specialFundLevel] * totalProduction;
+        medicalSupply = medicalSupply*0.3f + totalMedicalSupplyProduction;
+        totalIncome += totalProduction;
+        vaccineProgress += totalVaccineResearchProduction;
+        if (vaccineProgress > ResearchFinish) vaccineProgress = ResearchFinish;
+
+
+    }
+
+
+    void updateAllProduction()
+    {
+        totalProduction = 0f;
+        totalMedicalSupplyProduction = 0f;
+        totalVaccineResearchProduction = 0f;
+        totalProductionNetwork = 0f;
+        int msinfected = 0;
+        for (int i = 0; i < nodeCnt; i++)
+        {
+            if (nodes[i].GetComponent<node>().currentProductionStatus == global::node.nodeProductionStatus.Normal)
+                totalProduction += nodes[i].GetComponent<node>().production * nodes[i].GetComponent<node>().productionRate;
+            else if (nodes[i].GetComponent<node>().currentProductionStatus == global::node.nodeProductionStatus.Supply)
+            {
+                totalMedicalSupplyProduction += nodes[i].GetComponent<node>().production * nodes[i].GetComponent<node>().productionRate;
+                if (nodes[i].GetComponent<node>().productionRate < 1) msinfected ++;
+            }
+            else if (nodes[i].GetComponent<node>().currentProductionStatus == global::node.nodeProductionStatus.Research)
+                totalVaccineResearchProduction += nodes[i].GetComponent<node>().production * nodes[i].GetComponent<node>().productionRate;
+
+            totalProductionNetwork += nodes[i].GetComponent<node>().production;
+        }
+        totalProduction *= 100f / totalProductionNetwork;
+        totalMedicalSupplyProduction *= 100f / totalProductionNetwork;
+        totalVaccineResearchProduction *= 100f / totalProductionNetwork;
+        for (; msinfected>0;msinfected--) totalMedicalSupplyProduction *= 0.8f;
+
+    }
+
+
+    public void buyQ()
+    {
+        if (medicalSupply >= Qcost)
+        {
+            quarantineCnt++;
+            medicalSupply -= Qcost;
+        }
+    }
+    public void buyT()
+    {
+        if (medicalSupply >= Tcost)
+        {
+            testCnt++;
+            medicalSupply -= Tcost;
+        }
+    }
+
+    public void quitgame()
+    {
+        Application.Quit();
+    }
 }
 
