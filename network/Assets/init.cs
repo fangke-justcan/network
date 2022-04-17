@@ -68,7 +68,8 @@ public class init : MonoBehaviour
     protected Vector3 a;
     [HideInInspector]
     public string dataFolder;
-  
+
+    int detectedSickCnt = 0;
     // Start is called before the first frame update
     void Start()
     {
@@ -311,6 +312,7 @@ public class init : MonoBehaviour
 
 
         Debug.Log("Now, it is Day:" + daycnt + " redB: " + redBorder + " grennB: " + greenBorder);
+        revealSick();
 
         
     }
@@ -360,7 +362,7 @@ public class init : MonoBehaviour
 
     }
 
-
+    
 
     public void reshape()    // node position at the center of their neighbours 
     {
@@ -586,8 +588,46 @@ public class init : MonoBehaviour
         quaterHighNeighbourCnt = sortedNeighbourCnt[nodeCnt * 3 / 4];
         averageNeighbourCnt /= nodeCnt;
 
+    }
+
+    void revealSick()
+    {
+        // Calc detected SickCnt
+        detectedSickCnt = 0;
+        
+        for (int i = 0; i < nodeCnt; i++)
+        {
+            if (nodes[i].GetComponent<node>().sickDetcted && nodes[i].GetComponent<node>().currentStatus == global::node.nodeStatus.Sick)
+                detectedSickCnt++;
+
+            
+
+        }
+
+        if (detectedSickCnt == 0 & sickCnt > 4)
+        {
+            int randomNumber = Random.Range(0, sickCnt - 1);
+            for (int i = 0; i < nodeCnt; i++)
+            {
+
+                if (nodes[i].GetComponent<node>().currentStatus == global::node.nodeStatus.Sick)
+                {
+                    randomNumber--;
+                    if (randomNumber <= 0)
+                    {
+                        Debug.Log("We found very suspicous people at: " + i);
+                        break;
+                    }
+
+                }
+
+            }
+
+        }
 
     }
+
+
 
 }
 
